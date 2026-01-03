@@ -1,0 +1,8 @@
+requests
+bs4
+pika
+pymongo
+python-dotenv
+datetime
+playwright
+schedule

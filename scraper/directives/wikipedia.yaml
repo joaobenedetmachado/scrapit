@@ -1,0 +1,15 @@
+site: https://pt.wikipedia.org/wiki/Arara-vermelha
+use: beautifulsoup
+
+scrape:
+  title: 
+    - '.mw-page-title-main'
+    - attr: 'text'
+
+  note: 
+    - '.hatnote'
+    - attr: 'text'
+
+  description: 
+    - 'p'
+    - attr: 'text'
