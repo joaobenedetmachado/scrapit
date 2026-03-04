@@ -1,0 +1,39 @@
+# GitHub Trending — multi-field with all: true
+# Demonstrates: multiple all:true fields, transforms, cache
+# Usage: python -m scraper.main scrape github_trending.yaml --json
+
+site: https://github.com/trending
+use: beautifulsoup
+
+cache:
+  ttl: 600   # 10 min
+
+scrape:
+  repos:
+    - 'article.Box-row h2 a'
+    - attr: text
+      all: true
+
+  descriptions:
+    - 'article.Box-row p'
+    - attr: text
+      all: true
+
+  languages:
+    - '[itemprop="programmingLanguage"]'
+    - attr: text
+      all: true
+
+  stars:
+    - 'article.Box-row .octicon-star ~ span'
+    - attr: text
+      all: true
+
+transform:
+  repos:
+    - {replace: {"\n": "", " ": ""}}
+  descriptions:
+    - strip
+  stars:
+    - strip
+    - {replace: {",": ""}}

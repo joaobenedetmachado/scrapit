@@ -2,28 +2,14 @@ site: https://pt.wikipedia.org/wiki/Arara-vermelha
 use: beautifulsoup
 
 scrape:
-  title: 
+  title:
     - '.mw-page-title-main'
     - attr: 'text'
 
-  note: 
+  note:
     - '.hatnote'
     - attr: 'text'
 
-  description: 
-    - 'p'
-    - attr: 'text'
-
-
-scrape:
-  title: 
-    - '.mw-page-title-main'
-    - attr: 'text'
-
-  note: 
-    - '.hatnote'
-    - attr: 'text'
-
-  description: 
+  description:
     - 'p'
     - attr: 'text'

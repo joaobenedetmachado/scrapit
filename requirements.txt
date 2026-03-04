@@ -1,8 +1,7 @@
 requests
 bs4
+pyyaml
 pika
 pymongo
 python-dotenv
-datetime
 playwright
-schedule

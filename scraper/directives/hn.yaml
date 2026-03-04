@@ -1,0 +1,44 @@
+# Hacker News front page — paginated scrape
+# Demonstrates: pagination, all: true, transforms, validation
+# Usage: python -m scraper.main scrape hn.yaml --json
+
+site: https://news.ycombinator.com
+use: beautifulsoup
+
+cache:
+  ttl: 300   # cache for 5 minutes during dev
+
+paginate:
+  selector: 'a.morelink'
+  attr: href
+  max_pages: 3
+
+scrape:
+  titles:
+    - '.titleline > a'
+    - attr: text
+      all: true
+
+  links:
+    - '.titleline > a'
+    - attr: href
+      all: true
+
+  scores:
+    - '.score'
+    - attr: text
+      all: true
+
+transform:
+  titles:
+    - first     # grab first title for the top-level field
+  scores:
+    - first
+    - strip
+    - regex: '\d+'
+    - int
+
+validate:
+  titles:
+    required: true
+    not_empty: true

@@ -1,3 +1,10 @@
 .env
 .venv/
 **/venv/**
+.cache/
+output/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.DS_Store

@@ -1,0 +1,60 @@
+# Books to Scrape — spider mode demo
+# Discovers all book links from the catalogue index and scrapes each one.
+# Demonstrates: spider mode, fallback selectors, transforms, validation
+# Usage: python -m scraper.main scrape books.yaml --json
+
+site: https://books.toscrape.com
+use: beautifulsoup
+
+mode: spider
+
+follow:
+  selector: 'article.product_pod h3 a'
+  attr: href
+  max: 20
+  same_domain: true
+
+cache:
+  ttl: 1800   # 30 min cache
+
+scrape:
+  title:
+    - ['h1', '.product_main h1']
+    - attr: text
+
+  price:
+    - ['.price_color', 'p.price_color']
+    - attr: text
+
+  rating:
+    - 'p.star-rating'
+    - attr: class
+
+  availability:
+    - '.availability'
+    - attr: text
+
+transform:
+  title:
+    - strip
+  price:
+    - strip
+    - replace: {"£": "", "Â": ""}
+    - float
+  rating:
+    - last     # class="star-rating Three" → ["star-rating", "Three"]
+    - strip
+  availability:
+    - strip
+    - lower
+
+validate:
+  title:
+    required: true
+    min_length: 2
+  price:
+    required: true
+    type: float
+    min: 0
+  availability:
+    in: [in stock, out of stock]
