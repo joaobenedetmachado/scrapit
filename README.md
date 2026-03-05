@@ -514,3 +514,75 @@ Quick ways to contribute:
 ## License
 
 [MIT](LICENSE) © João Benedet Machado
+
+---
+
+## Proxy Configuration
+
+You can use proxies in your directives to route requests through proxy servers.
+
+### Basic Usage
+
+```yaml
+site: example.com
+use: bs4
+
+scrape:
+  url: https://example.com/products
+  items:
+    selector: ".product"
+    fields:
+      name:
+        selector: "h3"
+        method: text
+
+# Proxy configuration
+proxy:
+  enabled: true
+  url: "http://proxy.example.com:8080"
+  # Or use environment variables
+  # url: "${HTTP_PROXY}"
+```
+
+### Using with Environment Variables
+
+```yaml
+proxy:
+  enabled: true
+  url: "${HTTP_PROXY}"  # Reads from HTTP_PROXY or HTTPS_PROXY env var
+```
+
+### Proxies for Different Protocols
+
+```yaml
+proxy:
+  http: "http://http-proxy.example.com:8080"
+  https: "https://https-proxy.example.com:8080"
+```
+
+### Rotating Proxies
+
+```yaml
+proxy:
+  enabled: true
+  rotate: true
+  proxies:
+    - "http://proxy1.example.com:8080"
+    - "http://proxy2.example.com:8080"
+```
+
+### Common Proxy Providers
+
+- **SmartProxy** - Residential proxies
+- **Oxylabs** - Enterprise proxies  
+- **ScraperAPI** - API with proxy rotation
+- **ScrapingBee** - Headless browser with proxies
+
+---
+
+### Best Practices
+
+1. Use residential proxies for sensitive sites
+2. Rotate proxies to avoid blocks
+3. Set appropriate delay between requests
+4. Monitor proxy health and replace dead proxies
