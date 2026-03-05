@@ -593,6 +593,57 @@
       .faq-item { grid-template-columns: 1fr; gap: .5rem; }
     }
 
+    /* ── ISSUES ──────────────────────────────────── */
+    .issues-toolbar {
+      display: flex; align-items: center; gap: .5rem;
+      margin-bottom: 1.75rem; flex-wrap: wrap;
+    }
+    .filter-btn {
+      font-family: var(--mono); font-size: .72rem;
+      padding: .3rem .85rem;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+      cursor: pointer; transition: all .12s;
+    }
+    .filter-btn:hover { color: var(--text); border-color: var(--border2); }
+    .filter-btn.active { background: var(--amber); border-color: var(--amber); color: var(--ink); font-weight: 500; }
+
+    .issues-grid {
+      display: flex; flex-direction: column; gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+    .issue-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem; align-items: start;
+      padding: 1rem 1.25rem;
+      background: var(--ink);
+      transition: background .15s;
+      text-decoration: none;
+    }
+    .issue-card:hover { background: var(--ink2); text-decoration: none; }
+    .issue-title-row { display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap; margin-bottom: .35rem; }
+    .issue-num { font-family: var(--mono); font-size: .72rem; color: var(--dim); flex-shrink: 0; }
+    .issue-title { font-size: .875rem; font-weight: 500; color: var(--text); line-height: 1.4; }
+    .issue-labels { display: flex; gap: .3rem; flex-wrap: wrap; margin-bottom: .4rem; }
+    .issue-label {
+      font-family: var(--mono); font-size: .62rem; font-weight: 500;
+      padding: .06rem .4rem; border-radius: 2px;
+    }
+    .issue-meta { font-family: var(--mono); font-size: .68rem; color: var(--dim); }
+    .issue-arrow { font-family: var(--mono); font-size: .8rem; color: var(--dim); transition: color .15s; margin-top: .1rem; }
+    .issue-card:hover .issue-arrow { color: var(--amber); }
+    .issues-state {
+      padding: 2.5rem; text-align: center;
+      font-family: var(--mono); font-size: .78rem; color: var(--dim);
+      border: 1px solid var(--border);
+    }
+    .issues-footer {
+      margin-top: 1.1rem; text-align: right;
+      font-family: var(--mono); font-size: .73rem;
+    }
+
     /* ── FOOTER ──────────────────────────────────── */
     footer {
       border-top: 1px solid var(--border);
@@ -649,6 +700,7 @@
     <a href="#integrations">ai integrations</a>
     <a href="docs.html">docs</a>
     <a href="#contribute">contribute</a>
+    <a href="#issues">issues</a>
   </div>
   <div class="nav-right">
     <a class="btn btn-outline btn-sm" href="https://pypi.org/project/scrapit-scraper/" target="_blank">PyPI</a>
@@ -1327,11 +1379,37 @@ data = scrape_with_selectors(<span class="str">"https://example.com"</span>, {
   </div>
 </div>
 
+<!-- ── ISSUES ────────────────────────────────────── -->
+<div id="issues">
+  <div class="section-wrap">
+    <div class="section-header">
+      <span class="section-num">07 —</span>
+      <h2>Open <em>issues.</em></h2>
+      <p class="section-sub">Live from GitHub. Pick one up.</p>
+    </div>
+
+    <div class="issues-toolbar">
+      <button class="filter-btn active" data-filter="all">all open</button>
+      <button class="filter-btn" data-filter="good first issue">good first issue</button>
+      <button class="filter-btn" data-filter="bug">bug</button>
+      <button class="filter-btn" data-filter="enhancement">enhancement</button>
+    </div>
+
+    <div id="issues-grid" class="issues-grid">
+      <div class="issues-state">loading issues...</div>
+    </div>
+
+    <div class="issues-footer">
+      <a href="https://github.com/joaobenedetmachado/scrapit/issues" target="_blank">view all on GitHub →</a>
+    </div>
+  </div>
+</div>
+
 <!-- ── FAQ ───────────────────────────────────────── -->
 <div id="faq">
   <div class="section-wrap">
     <div class="section-header">
-      <span class="section-num">07 —</span>
+      <span class="section-num">08 —</span>
       <h2>Common <em>questions.</em></h2>
     </div>
 
@@ -1379,6 +1457,94 @@ data = scrape_with_selectors(<span class="str">"https://example.com"</span>, {
 </footer>
 
 <script>
+  // ── ISSUES ────────────────────────────────────────
+  const REPO = 'joaobenedetmachado/scrapit';
+  let allIssues = [];
+  let activeFilter = 'all';
+
+  function labelColor(name) {
+    const n = name.toLowerCase();
+    if (n.includes('bug'))               return { bg: 'rgba(224,82,82,.15)',   color: '#e05252' };
+    if (n.includes('good first issue'))  return { bg: 'rgba(88,166,255,.15)',  color: '#58a6ff' };
+    if (n.includes('enhancement'))       return { bg: 'rgba(91,185,140,.15)',  color: '#5bb98c' };
+    if (n.includes('help wanted'))       return { bg: 'rgba(242,201,76,.15)',  color: '#f2c94c' };
+    if (n.includes('documentation'))     return { bg: 'rgba(121,192,255,.15)', color: '#79c0ff' };
+    return { bg: 'rgba(122,117,112,.15)', color: '#7a7570' };
+  }
+
+  function timeAgo(dateStr) {
+    const diff = (Date.now() - new Date(dateStr)) / 1000;
+    if (diff < 3600)  return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 2592000) return Math.floor(diff / 86400) + 'd ago';
+    return Math.floor(diff / 2592000) + 'mo ago';
+  }
+
+  function renderIssues(issues) {
+    const grid = document.getElementById('issues-grid');
+    if (!issues.length) {
+      grid.innerHTML = '<div class="issues-state">no issues found for this filter</div>';
+      return;
+    }
+    grid.innerHTML = issues.map(issue => {
+      const labels = issue.labels.map(l => {
+        const { bg, color } = labelColor(l.name);
+        return `<span class="issue-label" style="background:${bg};color:${color}">${l.name}</span>`;
+      }).join('');
+      return `
+        <a class="issue-card" href="${issue.html_url}" target="_blank" rel="noopener">
+          <div>
+            <div class="issue-title-row">
+              <span class="issue-num">#${issue.number}</span>
+              <span class="issue-title">${issue.title}</span>
+            </div>
+            ${labels ? `<div class="issue-labels">${labels}</div>` : ''}
+            <div class="issue-meta">opened ${timeAgo(issue.created_at)} by ${issue.user.login}</div>
+          </div>
+          <div class="issue-arrow">→</div>
+        </a>`;
+    }).join('');
+  }
+
+  function applyFilter(filter) {
+    activeFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.filter === filter);
+    });
+    if (filter === 'all') {
+      renderIssues(allIssues);
+    } else {
+      renderIssues(allIssues.filter(i =>
+        i.labels.some(l => l.name.toLowerCase() === filter)
+      ));
+    }
+  }
+
+  async function loadIssues() {
+    const grid = document.getElementById('issues-grid');
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${REPO}/issues?state=open&per_page=30&direction=desc`
+      );
+      if (!res.ok) throw new Error(res.status);
+      allIssues = (await res.json()).filter(i => !i.pull_request);
+      renderIssues(allIssues);
+    } catch (e) {
+      grid.innerHTML = `<div class="issues-state">could not load issues — <a href="https://github.com/${REPO}/issues" target="_blank">view on GitHub</a></div>`;
+    }
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyFilter(btn.dataset.filter));
+  });
+
+  // Load when section enters viewport
+  const issuesSection = document.getElementById('issues');
+  new IntersectionObserver((entries, obs) => {
+    if (entries[0].isIntersecting) { loadIssues(); obs.disconnect(); }
+  }, { rootMargin: '200px' }).observe(issuesSection);
+
+  // ── TABS ────────────────────────────────────────────
   function switchTab(name, btn) {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
