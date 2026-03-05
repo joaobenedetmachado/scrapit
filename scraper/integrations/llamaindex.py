@@ -1,31 +1,47 @@
 """
 LlamaIndex integration for Scrapit.
 
-Provides a BaseReader-compatible reader that can be used in
-LlamaIndex ingestion pipelines and RAG applications.
+Provides a BaseReader-compatible reader for use in LlamaIndex
+ingestion pipelines and RAG applications.
 
 Usage:
 
     from scraper.integrations.llamaindex import ScrapitReader
 
-    # Load from a directive
     reader = ScrapitReader()
-    docs = reader.load_data(directive="wikipedia")
 
-    # Load from a plain URL
+    # From a URL
     docs = reader.load_data(url="https://example.com")
 
-    # Use with LlamaIndex VectorStoreIndex
+    # From a directive
+    docs = reader.load_data(directive="wikipedia")
+
+    # Multiple URLs in parallel
+    docs = reader.load_data(urls=["https://site1.com", "https://site2.com"])
+
+    # Build a RAG index
     from llama_index.core import VectorStoreIndex
     index = VectorStoreIndex.from_documents(docs)
-    query_engine = index.as_query_engine()
-    response = query_engine.query("What is the main topic?")
+    engine = index.as_query_engine()
+    response = engine.query("Summarize the main points.")
 """
 
 from __future__ import annotations
 
-from scraper.integrations import scrape_url, scrape_directive
-from scraper.integrations.langchain import _dict_to_text
+from scraper.integrations import scrape_page, scrape_many, scrape_directive
+
+
+def _dict_to_text(data: dict) -> str:
+    skip = {"url", "timestamp", "_id", "_page", "_source", "_valid", "_errors", "ok"}
+    lines = []
+    for key, value in data.items():
+        if key in skip or value is None:
+            continue
+        if isinstance(value, list):
+            lines.append(f"{key}: {', '.join(str(v) for v in value)}")
+        else:
+            lines.append(f"{key}: {value}")
+    return "\n".join(lines)
 
 
 class ScrapitReader:
@@ -33,8 +49,7 @@ class ScrapitReader:
     LlamaIndex-compatible reader for Scrapit.
 
     Implements the BaseReader interface — works with LlamaIndex's
-    ingestion pipeline, SimpleDirectoryReader pattern, and
-    VectorStoreIndex.from_documents().
+    ingestion pipeline and VectorStoreIndex.from_documents().
     """
 
     def load_data(
@@ -48,49 +63,56 @@ class ScrapitReader:
         Load scraped content as LlamaIndex Document objects.
 
         Args:
-            url: Single URL to scrape (returns plain text).
-            directive: Directive name or path (returns structured data).
-            urls: List of URLs to scrape.
+            url: Single URL to scrape.
+            directive: Directive name or path (structured data).
+            urls: List of URLs to scrape in parallel.
             directives: List of directive names/paths.
         """
-        try:
-            from llama_index.core import Document  # type: ignore
-        except ImportError:
-            try:
-                from llama_index import Document  # type: ignore
-            except ImportError:
-                raise ImportError(
-                    "llama-index is required for ScrapitReader. "
-                    "Install with: pip install llama-index-core"
-                )
-
+        Document = _import_document()
         docs = []
 
-        # Single URL
         if url:
-            text = scrape_url(url)
-            docs.append(Document(text=text, metadata={"source": url}))
+            docs.extend(self._from_url(url, Document))
 
-        # Multiple URLs
-        for u in urls or []:
-            try:
-                text = scrape_url(u)
-                docs.append(Document(text=text, metadata={"source": u}))
-            except Exception as e:
-                from scraper.logger import log
-                log(f"ScrapitReader: error scraping {u}: {e}", "warning")
+        if urls:
+            results = scrape_many(urls, mode="page")
+            for item in results:
+                if not item.get("ok"):
+                    continue
+                content = item.get("main_content", "")[:4000]
+                metadata = {
+                    "source": item.get("url", ""),
+                    "title": item.get("title", ""),
+                    "description": item.get("description", ""),
+                    "word_count": item.get("word_count", 0),
+                }
+                docs.append(Document(text=content, metadata=metadata))
 
-        # Single directive
         if directive:
-            docs.extend(self._load_directive(directive, Document))
+            docs.extend(self._from_directive(directive, Document))
 
-        # Multiple directives
         for d in directives or []:
-            docs.extend(self._load_directive(d, Document))
+            docs.extend(self._from_directive(d, Document))
 
         return docs
 
-    def _load_directive(self, directive: str, Document) -> list:
+    def _from_url(self, url: str, Document) -> list:
+        try:
+            page = scrape_page(url)
+            content = page["main_content"][:4000]
+            metadata = {
+                "source": url,
+                "title": page.get("title", ""),
+                "description": page.get("description", ""),
+                "word_count": page.get("word_count", 0),
+            }
+            return [Document(text=content, metadata=metadata)]
+        except Exception as e:
+            from scraper.logger import log
+            log(f"ScrapitReader: error scraping {url}: {e}", "warning")
+            return []
+
+    def _from_directive(self, directive: str, Document) -> list:
         result = scrape_directive(directive)
         results = result if isinstance(result, list) else [result]
         docs = []
@@ -103,3 +125,17 @@ class ScrapitReader:
             }
             docs.append(Document(text=text, metadata=metadata))
         return docs
+
+
+def _import_document():
+    try:
+        from llama_index.core import Document  # type: ignore
+        return Document
+    except ImportError:
+        try:
+            from llama_index import Document  # type: ignore
+            return Document
+        except ImportError:
+            raise ImportError(
+                "llama-index is required. Install with: pip install llama-index-core"
+            )
