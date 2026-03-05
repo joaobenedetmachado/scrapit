@@ -1,0 +1,31 @@
+# Product Hunt Scraper Directive
+# Usage: scraper --directive producthunt
+# 
+# Example:
+#   scraper --directive producthunt --output products.json
+
+site: producthunt.com
+use: bs4
+
+scrape:
+  # Get today's popular products
+  url: https://www.producthunt.com/
+  
+  items:
+    selector: ".postsList_..."
+    fields:
+      name:
+        selector: "h3"
+        method: text
+      tagline:
+        selector: ".tagline"
+        method: text
+      votes:
+        selector: "[data-votes]"
+        method: attr(data-votes)
+      url:
+        selector: "a"
+        method: attr(href)
+
+# Optional: Add a delay to be respectful
+# delay: 2
