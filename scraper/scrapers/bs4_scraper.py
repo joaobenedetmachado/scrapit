@@ -138,6 +138,12 @@ def _extract_many(elements, attr: str) -> list:
 
 def scrape(dados: dict) -> dict:
     """Scrape a single URL using BeautifulSoup."""
+    # Add delay between requests if specified
+    delay = dados.get("delay", 0)
+    if delay > 0:
+        import time
+        time.sleep(delay)
+    
     cache_cfg = dados.get("cache", {})
     cache_ttl = cache_cfg.get("ttl", 0) if isinstance(cache_cfg, dict) else 0
 

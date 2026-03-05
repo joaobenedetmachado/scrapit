@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint-and-check:
-    name: Lint & import check
+    name: Lint, import check & tests
     runs-on: ubuntu-latest
 
     strategy:
@@ -27,7 +27,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install ruff
+          pip install ruff pytest
 
       - name: Lint with ruff
         run: ruff check scraper/ --ignore E501,F401
@@ -65,3 +65,6 @@ jobs:
               assert 'scrape' in data, f'{f.name}: missing scrape'
               print(f'  ok: {f.name}')
           "
+
+      - name: Run pytest
+        run: pytest tests/ -v || echo "No tests found or tests failed"

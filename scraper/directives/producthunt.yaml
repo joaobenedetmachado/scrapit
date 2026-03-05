@@ -1,57 +1,31 @@
-# Product Hunt — daily products scraping
-# Demonstrates: pagination, nested selectors, transforms
-# Usage: python -m scraper.main scrape producthunt.yaml --json
+# Product Hunt Scraper Directive
+# Usage: scraper --directive producthunt
+# 
+# Example:
+#   scraper --directive producthunt --output products.json
 
-site: https://www.producthunt.com
-use: beautifulsoup
-
-cache:
-  ttl: 3600   # cache for 1 hour
-
-paginate:
-  selector: 'a[aria-label="Next"]'
-  attr: href
-  max_pages: 2
+site: producthunt.com
+use: bs4
 
 scrape:
-  products:
-    - '.styles_item__3z6l4'
-    - all: true
+  # Get today's popular products
+  url: https://www.producthunt.com/
+  
+  items:
+    selector: ".postsList_..."
+    fields:
+      name:
+        selector: "h3"
+        method: text
+      tagline:
+        selector: ".tagline"
+        method: text
+      votes:
+        selector: "[data-votes]"
+        method: attr(data-votes)
+      url:
+        selector: "a"
+        method: attr(href)
 
-  names:
-    - '.styles_name__2pgbq'
-    - attr: text
-      all: true
-
-  descriptions:
-    - '.styles_tagline__3z6l4'
-    - attr: text
-      all: true
-
-  makers:
-    - '.styles_maker__3z6l4'
-    - attr: text
-    - all: true
-
-  votes:
-    - '[data-test="vote-button"]'
-    - attr: text
-    - all: true
-
-transform:
-  names:
-    - strip
-  descriptions:
-    - strip
-  makers:
-    - {replace: {"by ": ""}}
-    - strip
-  votes:
-    - strip
-    - {replace: {",": ""}}
-    - int
-
-validate:
-  names:
-    required: true
-    not_empty: true
+# Optional: Add a delay to be respectful
+# delay: 2
