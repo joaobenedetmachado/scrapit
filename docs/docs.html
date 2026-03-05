@@ -6,148 +6,164 @@
   <title>Scrapit — Documentation</title>
   <meta name="description" content="Full documentation for Scrapit — YAML-driven web scraper framework." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&family=Syne:wght@700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --ink:      #0c0b09;
+      --ink:      #0e0d0b;
       --ink2:     #141210;
-      --ink3:     #1e1c19;
-      --border:   #2a2724;
-      --border2:  #3d3a35;
-      --text:     #f0ede8;
-      --muted:    #7a7570;
-      --dim:      #4a4742;
+      --ink3:     #1c1a17;
+      --border:   #272420;
+      --border2:  #3a3630;
+      --text:     #e8e4de;
+      --muted:    #7d7670;
+      --dim:      #4a4540;
       --accent:   #58a6ff;
       --accent2:  #79c0ff;
       --green:    #5bb98c;
       --red:      #e05252;
       --yellow:   #f2c94c;
       --mono:     'IBM Plex Mono', monospace;
-      --serif:    'Instrument Serif', Georgia, serif;
-      --sans:     'Syne', sans-serif;
-      --sidebar:  248px;
-      --nav-h:    52px;
+      --sans:     'IBM Plex Sans', system-ui, sans-serif;
+      --display:  'Syne', sans-serif;
+      --nav-h:    50px;
+      --sidebar:  220px;
+      --content:  680px;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: var(--mono);
+      font-family: var(--sans);
       background: var(--ink);
       color: var(--text);
       line-height: 1.7;
-    }
-
-    /* grain */
-    body::after {
-      content: '';
-      position: fixed; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-      opacity: 0.028;
-      pointer-events: none;
-      z-index: 9999;
+      font-size: 15px;
     }
 
     a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    a:hover { text-decoration: underline; text-underline-offset: 2px; }
 
     code {
       font-family: var(--mono);
-      font-size: .8em;
+      font-size: .82em;
       background: var(--ink3);
       border: 1px solid var(--border);
-      padding: .1em .4em;
+      padding: .1em .38em;
       border-radius: 3px;
       color: var(--accent2);
     }
 
-    p { color: var(--muted); margin-bottom: .85rem; line-height: 1.75; font-size: .875rem; }
+    p { color: var(--muted); margin-bottom: .85rem; line-height: 1.8; }
     p strong { color: var(--text); font-weight: 500; }
-    ul, ol { padding-left: 1.35rem; color: var(--muted); font-size: .875rem; }
-    li { margin-bottom: .3rem; }
+    ul, ol { padding-left: 1.4rem; color: var(--muted); }
+    li { margin-bottom: .35rem; line-height: 1.7; }
     li strong { color: var(--text); font-weight: 500; }
 
-    /* ── TOP NAV ───────────────────────── */
+    /* ── TOP NAV ─────────────────────────────── */
     .top-nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       height: var(--nav-h);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 1.5rem;
-      background: rgba(12,11,9,.97);
+      display: flex; align-items: center;
+      padding: 0 2rem;
+      background: rgba(14,13,11,.97);
       backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--border);
     }
-    .nav-left { display: flex; align-items: center; gap: 1.25rem; }
+
+    .nav-inner {
+      width: 100%;
+      max-width: calc(var(--sidebar) + var(--content) + 5rem);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-left { display: flex; align-items: center; gap: 1rem; }
 
     .logo {
-      font-family: var(--sans);
+      font-family: var(--display);
       font-weight: 700;
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       color: var(--text);
       letter-spacing: -.03em;
     }
     .logo span { color: var(--accent); }
 
-    .nav-pill {
+    .nav-tag {
       font-family: var(--mono);
-      font-size: .68rem;
-      padding: .15rem .5rem;
+      font-size: .65rem;
+      padding: .1rem .45rem;
       background: rgba(88,166,255,.08);
       color: var(--accent);
-      border: 1px solid rgba(88,166,255,.2);
+      border: 1px solid rgba(88,166,255,.18);
+      letter-spacing: .04em;
     }
 
-    .nav-links { display: flex; gap: 1.25rem; }
+    .nav-links { display: flex; gap: 1.5rem; }
     .nav-links a {
       font-family: var(--mono);
-      font-size: .78rem;
+      font-size: .75rem;
       color: var(--muted);
       transition: color .15s;
     }
     .nav-links a:hover { color: var(--text); text-decoration: none; }
 
-    /* ── LAYOUT ────────────────────────── */
-    .layout {
+    /* ── PAGE SHELL ──────────────────────────── */
+    .page {
       display: flex;
+      justify-content: center;
       margin-top: var(--nav-h);
       min-height: calc(100vh - var(--nav-h));
+      padding: 0 2rem;
     }
 
-    /* ── SIDEBAR ───────────────────────── */
-    .sidebar {
-      position: fixed;
-      top: var(--nav-h); left: 0; bottom: 0;
-      width: var(--sidebar);
-      overflow-y: auto;
-      border-right: 1px solid var(--border);
-      background: var(--ink2);
-      padding: 1.75rem 0 2rem;
+    .page-inner {
+      display: flex;
+      width: 100%;
+      max-width: calc(var(--sidebar) + var(--content) + 5rem);
+      gap: 0;
     }
+
+    /* ── SIDEBAR ─────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar);
+      flex-shrink: 0;
+      position: sticky;
+      top: var(--nav-h);
+      height: calc(100vh - var(--nav-h));
+      overflow-y: auto;
+      padding: 2rem 0 2rem;
+      border-right: 1px solid var(--border);
+    }
+
     .sidebar::-webkit-scrollbar { width: 3px; }
-    .sidebar::-webkit-scrollbar-track { background: transparent; }
     .sidebar::-webkit-scrollbar-thumb { background: var(--border); }
 
     .sb-group { margin-bottom: 1.75rem; }
-    .sb-group-label {
+
+    .sb-label {
       font-family: var(--mono);
-      font-size: .65rem;
+      font-size: .62rem;
       font-weight: 500;
-      letter-spacing: .1em;
+      letter-spacing: .12em;
       text-transform: uppercase;
       color: var(--dim);
       padding: 0 1.25rem;
-      margin-bottom: .5rem;
+      margin-bottom: .4rem;
+      display: block;
     }
+
     .sb-link {
       display: block;
-      padding: .32rem 1.25rem;
+      padding: .28rem 1.25rem;
       font-family: var(--mono);
-      font-size: .78rem;
+      font-size: .75rem;
       color: var(--muted);
-      transition: color .12s;
       border-left: 2px solid transparent;
+      transition: color .1s;
     }
     .sb-link:hover { color: var(--text); text-decoration: none; }
     .sb-link.active {
@@ -156,217 +172,215 @@
       background: rgba(88,166,255,.05);
     }
 
-    /* ── CONTENT ───────────────────────── */
+    /* ── CONTENT ─────────────────────────────── */
     .content {
-      margin-left: var(--sidebar);
       flex: 1;
-      max-width: 800px;
-      padding: 3rem 3rem 6rem;
-    }
-    @media (max-width: 900px) {
-      .sidebar { display: none; }
-      .content { margin-left: 0; padding: 2rem 1.5rem 4rem; }
+      max-width: var(--content);
+      padding: 3.5rem 0 3.5rem 4rem;
+      min-width: 0;
     }
 
-    /* ── HEADINGS ──────────────────────── */
+    @media (max-width: 860px) {
+      .sidebar { display: none; }
+      .content { padding: 2.5rem 0; }
+      .page { padding: 0 1.25rem; }
+    }
+
+    /* ── DOC TYPOGRAPHY ──────────────────────── */
     .doc-section { margin-bottom: 3.5rem; }
 
     h1 {
-      font-family: var(--serif);
-      font-size: 2.2rem;
-      font-weight: 400;
+      font-family: var(--sans);
+      font-size: 1.7rem;
+      font-weight: 600;
       letter-spacing: -.02em;
-      margin-bottom: .4rem;
-      line-height: 1.15;
+      line-height: 1.2;
+      margin-bottom: .5rem;
+      color: var(--text);
+    }
+
+    .doc-lead {
+      font-size: .95rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-bottom: 2rem;
+      max-width: 520px;
     }
 
     h2 {
-      font-family: var(--mono);
+      font-family: var(--sans);
       font-size: 1rem;
       font-weight: 600;
-      letter-spacing: .01em;
-      margin-bottom: .75rem;
-      margin-top: 2.25rem;
-      padding-bottom: .6rem;
-      border-bottom: 1px solid var(--border);
       color: var(--text);
+      margin-top: 2.5rem;
+      margin-bottom: .6rem;
+      padding-bottom: .5rem;
+      border-bottom: 1px solid var(--border);
+      letter-spacing: -.01em;
     }
     h2:first-child { margin-top: 0; }
 
     h3 {
-      font-family: var(--mono);
-      font-size: .85rem;
-      font-weight: 500;
-      margin-bottom: .4rem;
-      margin-top: 1.5rem;
+      font-family: var(--sans);
+      font-size: .875rem;
+      font-weight: 600;
       color: var(--text);
+      margin-top: 1.5rem;
+      margin-bottom: .4rem;
     }
 
     h4 {
       font-family: var(--mono);
-      font-size: .68rem;
+      font-size: .65rem;
       font-weight: 500;
-      margin-bottom: .3rem;
-      margin-top: 1.1rem;
       color: var(--dim);
       text-transform: uppercase;
-      letter-spacing: .08em;
+      letter-spacing: .1em;
+      margin-top: 1.25rem;
+      margin-bottom: .35rem;
     }
 
-    .section-intro {
-      font-size: .9rem;
-      color: var(--muted);
-      margin-bottom: 1.75rem;
-      max-width: 540px;
-      line-height: 1.75;
-    }
-
-    /* ── CALLOUT ───────────────────────── */
+    /* ── CALLOUT ─────────────────────────────── */
     .callout {
-      display: flex; gap: .75rem;
-      padding: .85rem 1rem;
+      display: flex;
+      gap: .75rem;
+      padding: .8rem 1rem;
       border-left: 2px solid var(--accent);
       background: rgba(88,166,255,.05);
-      font-size: .82rem;
+      font-size: .84rem;
       color: var(--muted);
       margin: 1rem 0;
-      line-height: 1.65;
+      line-height: 1.7;
     }
     .callout.green { border-color: var(--green); background: rgba(91,185,140,.05); }
     .callout.red   { border-color: var(--red);   background: rgba(224,82,82,.05); }
-    .callout-icon { flex-shrink: 0; }
+    .callout-icon  { flex-shrink: 0; font-family: var(--mono); font-size: .8rem; color: var(--dim); }
     .callout strong { color: var(--text); font-weight: 500; }
 
-    /* ── CODE BLOCK ────────────────────── */
+    /* ── CODE BLOCK ──────────────────────────── */
     .code-block {
-      background: var(--ink);
-      border: 1px solid var(--border);
-      overflow: hidden;
-      margin: .85rem 0;
-      position: relative;
-    }
-    .code-block::before {
-      content: '';
-      position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
-      background: var(--accent);
-    }
-    .code-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: .45rem .85rem .45rem 1.1rem;
-      border-bottom: 1px solid var(--border);
       background: var(--ink2);
+      border: 1px solid var(--border);
+      margin: .85rem 0;
+      overflow: hidden;
     }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .4rem .85rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--ink3);
+    }
+    .code-dots { display: flex; gap: .3rem; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-r { background: #c0392b; opacity: .7; }
+    .dot-y { background: #d4a017; opacity: .7; }
+    .dot-g { background: #27ae60; opacity: .7; }
     .code-fname {
       font-family: var(--mono);
-      font-size: .7rem;
+      font-size: .68rem;
       color: var(--dim);
     }
-    .code-dots { display: flex; gap: .35rem; }
-    .dot { width: 9px; height: 9px; border-radius: 50%; }
-    .dot-r { background: #e05252; }
-    .dot-y { background: #e8c84a; }
-    .dot-g { background: #5bb98c; }
 
     pre {
-      padding: 1rem 1rem 1rem 1.2rem;
+      padding: .9rem 1.1rem;
       font-family: var(--mono);
-      font-size: .77rem;
-      line-height: 1.85;
+      font-size: .775rem;
+      line-height: 1.9;
       overflow-x: auto;
       tab-size: 2;
     }
 
-    .kw  { color: #79c0ff; font-style: italic; }
-    .str { color: #b8d9a0; }
+    .kw  { color: #79c0ff; }
+    .str { color: #a8d8a8; }
     .val { color: #7ec8e3; }
-    .cmt { color: #4a4742; font-style: italic; }
-    .key { color: #f2c94c; }
+    .cmt { color: #4a4542; font-style: italic; }
+    .key { color: #e8c97a; }
     .num { color: #e8aa6a; }
     .cmd { color: var(--green); }
     .prm { color: var(--accent2); }
 
-    /* ── TABLES ────────────────────────── */
+    /* ── TABLES ──────────────────────────────── */
     .table-wrap {
       border: 1px solid var(--border);
-      overflow: hidden;
       margin: .85rem 0;
+      overflow-x: auto;
     }
-    table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
     th {
       text-align: left;
-      padding: .55rem .9rem;
+      padding: .5rem .85rem;
       border-bottom: 1px solid var(--border);
       color: var(--dim);
       font-weight: 500;
-      font-size: .68rem;
+      font-size: .65rem;
       text-transform: uppercase;
-      letter-spacing: .09em;
+      letter-spacing: .1em;
       font-family: var(--mono);
-      background: var(--ink2);
+      background: var(--ink3);
+      white-space: nowrap;
     }
     td {
-      padding: .5rem .9rem;
+      padding: .45rem .85rem;
       border-bottom: 1px solid var(--border);
       vertical-align: top;
       color: var(--muted);
-      font-size: .8rem;
     }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--ink2); }
-    td code { background: var(--ink3); }
-    .td-key  { font-family: var(--mono); color: var(--accent2); font-size: .77rem; }
-    .td-type { font-family: var(--mono); color: var(--yellow);  font-size: .75rem; }
-    .td-req  { font-size: .68rem; font-weight: 600; color: var(--red); }
-    .td-opt  { font-size: .68rem; font-weight: 500; color: var(--dim); }
+    tr:hover td { background: rgba(255,255,255,.015); }
+    .td-key  { font-family: var(--mono); color: var(--accent2); font-size: .77rem; white-space: nowrap; }
+    .td-type { font-family: var(--mono); color: var(--yellow);  font-size: .73rem; white-space: nowrap; }
 
-    /* ── PILL ──────────────────────────── */
+    /* ── PILL ────────────────────────────────── */
     .pill {
       display: inline-block;
-      padding: .08rem .4rem;
-      font-size: .66rem;
-      font-weight: 600;
       font-family: var(--mono);
+      font-size: .63rem;
+      font-weight: 500;
+      padding: .06rem .38rem;
+      vertical-align: middle;
     }
-    .pill-r { background: rgba(224,82,82,.12);  color: var(--red); }
-    .pill-o { background: rgba(91,185,140,.1);  color: var(--green); }
+    .pill-r { background: rgba(224,82,82,.12);  color: var(--red);   border: 1px solid rgba(224,82,82,.2); }
+    .pill-o { background: rgba(91,185,140,.1);  color: var(--green); border: 1px solid rgba(91,185,140,.2); }
 
-    /* ── SEPARATOR ─────────────────────── */
-    hr {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 2.5rem 0;
-    }
+    /* ── HR ──────────────────────────────────── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
   </style>
 </head>
 <body>
 
-<!-- TOP NAV -->
+<!-- NAV -->
 <nav class="top-nav">
-  <div class="nav-left">
-    <a href="index.html" class="logo">scrap<span>it</span></a>
-    <span class="nav-pill">docs</span>
-  </div>
-  <div class="nav-links">
-    <a href="index.html">Home</a>
-    <a href="https://github.com/joaobenedetmachado/scrapit" target="_blank">GitHub</a>
-    <a href="https://pypi.org/project/scrapit-scraper/" target="_blank">PyPI</a>
-    <a href="https://github.com/joaobenedetmachado/scrapit/issues?q=label%3A%22good+first+issue%22" target="_blank">Contribute</a>
+  <div class="nav-inner">
+    <div class="nav-left">
+      <a href="index.html" class="logo">scrap<span>it</span></a>
+      <span class="nav-tag">docs</span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="https://github.com/joaobenedetmachado/scrapit" target="_blank">GitHub</a>
+      <a href="https://pypi.org/project/scrapit-scraper/" target="_blank">PyPI</a>
+      <a href="https://github.com/joaobenedetmachado/scrapit/issues?q=label%3A%22good+first+issue%22" target="_blank">Contribute</a>
+    </div>
   </div>
 </nav>
 
-<div class="layout">
+<div class="page">
+<div class="page-inner">
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sb-group">
-    <div class="sb-group-label">Getting started</div>
+    <span class="sb-label">Getting started</span>
     <a class="sb-link" href="#installation">Installation</a>
     <a class="sb-link" href="#quickstart">Quick start</a>
     <a class="sb-link" href="#cli">CLI reference</a>
     <a class="sb-link" href="#env">Environment (.env)</a>
   </div>
   <div class="sb-group">
-    <div class="sb-group-label">Directives</div>
+    <span class="sb-label">Directives</span>
     <a class="sb-link" href="#directive-structure">Structure</a>
     <a class="sb-link" href="#scrape">scrape:</a>
     <a class="sb-link" href="#paginate">paginate:</a>
@@ -376,20 +390,20 @@
     <a class="sb-link" href="#multi-site">multi-site</a>
   </div>
   <div class="sb-group">
-    <div class="sb-group-label">Pipeline</div>
+    <span class="sb-label">Pipeline</span>
     <a class="sb-link" href="#transforms">Transforms</a>
     <a class="sb-link" href="#validation">Validation</a>
     <a class="sb-link" href="#hooks">Hooks</a>
   </div>
   <div class="sb-group">
-    <div class="sb-group-label">Storage</div>
+    <span class="sb-label">Storage</span>
     <a class="sb-link" href="#storage-json">JSON</a>
     <a class="sb-link" href="#storage-csv">CSV</a>
     <a class="sb-link" href="#storage-sqlite">SQLite</a>
     <a class="sb-link" href="#storage-mongo">MongoDB</a>
   </div>
   <div class="sb-group">
-    <div class="sb-group-label">AI Integrations</div>
+    <span class="sb-label">AI Integrations</span>
     <a class="sb-link" href="#ai-api">Quick API</a>
     <a class="sb-link" href="#ai-mcp">MCP Server</a>
     <a class="sb-link" href="#ai-anthropic">Anthropic</a>
@@ -398,7 +412,7 @@
     <a class="sb-link" href="#ai-llamaindex">LlamaIndex</a>
   </div>
   <div class="sb-group">
-    <div class="sb-group-label">Programmatic</div>
+    <span class="sb-label">Programmatic</span>
     <a class="sb-link" href="#python-api">Python API</a>
     <a class="sb-link" href="#queue">RabbitMQ queue</a>
   </div>
@@ -407,19 +421,18 @@
 <!-- CONTENT -->
 <main class="content">
 
-  <!-- ── INSTALLATION ─────────────────── -->
   <section class="doc-section" id="installation">
     <h1>Scrapit Documentation</h1>
-    <p class="section-intro">Everything you need to scrape any website with just a YAML file — including AI agent integration, transforms, validation, and storage.</p>
+    <p class="doc-lead">Everything you need to scrape any website with just a YAML file — including AI agent integration, transforms, validation, and storage.</p>
 
     <h2>Installation</h2>
 
-    <h3>Core (always required)</h3>
+    <h3>Core</h3>
     <div class="code-block">
       <pre><span class="cmd">$</span> pip install scrapit-scraper</pre>
     </div>
 
-    <h3>With optional extras</h3>
+    <h3>Optional extras</h3>
     <div class="code-block">
       <pre><span class="cmt"># Playwright backend (JS-rendered sites)</span>
 <span class="cmd">$</span> pip install scrapit-scraper[playwright]
@@ -442,8 +455,8 @@
     </div>
 
     <div class="callout">
-      <span class="callout-icon">ℹ</span>
-      <div>All integration extras are optional. Scrapit's core (YAML scraping, transforms, validation, SQLite) works with no extras installed.</div>
+      <span class="callout-icon">i</span>
+      <div>All integration extras are optional. The core (YAML scraping, transforms, validation, SQLite) works with no extras installed.</div>
     </div>
 
     <h3>From source</h3>
@@ -455,7 +468,6 @@
     </div>
   </section>
 
-  <!-- ── QUICKSTART ────────────────────── -->
   <section class="doc-section" id="quickstart">
     <h2>Quick start</h2>
 
@@ -495,7 +507,6 @@
     </div>
   </section>
 
-  <!-- ── CLI ──────────────────────────── -->
   <section class="doc-section" id="cli">
     <h2>CLI reference</h2>
 
@@ -504,7 +515,7 @@
       <table>
         <thead><tr><th>Flag</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td class="td-key">directive</td><td>Directive name (e.g. <code>hn</code>) or path to YAML file. <span class="pill pill-r">required</span></td></tr>
+          <tr><td class="td-key">directive</td><td>Directive name or path to YAML file. <span class="pill pill-r">required</span></td></tr>
           <tr><td class="td-key">--json</td><td>Save result as <code>output/&lt;name&gt;.json</code></td></tr>
           <tr><td class="td-key">--csv</td><td>Append result to <code>output/&lt;name&gt;.csv</code></td></tr>
           <tr><td class="td-key">--sqlite</td><td>Save to <code>output/scrapit.db</code></td></tr>
@@ -543,13 +554,12 @@
 
     <h3><code>scrapit cache</code></h3>
     <div class="code-block">
-      <pre><span class="cmd">$</span> scrapit cache stats        <span class="cmt"># show cache size and entries</span>
-<span class="cmd">$</span> scrapit cache clear        <span class="cmt"># clear all cached responses</span>
+      <pre><span class="cmd">$</span> scrapit cache stats
+<span class="cmd">$</span> scrapit cache clear
 <span class="cmd">$</span> scrapit cache invalidate <span class="prm">--url https://example.com</span></pre>
     </div>
   </section>
 
-  <!-- ── ENV ──────────────────────────── -->
   <section class="doc-section" id="env">
     <h2>Environment (.env)</h2>
     <p>Create a <code>.env</code> file at the project root. All variables are optional.</p>
@@ -574,7 +584,6 @@ OUTPUT_DIR=./output</pre>
 
   <hr/>
 
-  <!-- ── DIRECTIVE STRUCTURE ──────────── -->
   <section class="doc-section" id="directive-structure">
     <h2>Directive structure</h2>
     <p>A directive is a YAML file that fully describes a scraping job. Place them anywhere and reference by name or path.</p>
@@ -593,18 +602,17 @@ OUTPUT_DIR=./output</pre>
           <tr><td class="td-key">follow</td><td class="td-type">dict</td><td><span class="pill pill-o">optional</span></td><td>Spider / link-following config</td></tr>
           <tr><td class="td-key">headers</td><td class="td-type">dict</td><td><span class="pill pill-o">optional</span></td><td>Custom HTTP headers</td></tr>
           <tr><td class="td-key">cookies</td><td class="td-type">dict</td><td><span class="pill pill-o">optional</span></td><td>Cookies to send with request</td></tr>
-          <tr><td class="td-key">proxy</td><td class="td-type">string</td><td><span class="pill pill-o">optional</span></td><td>Proxy URL (e.g. <code>http://proxy:8080</code>)</td></tr>
+          <tr><td class="td-key">proxy</td><td class="td-type">string</td><td><span class="pill pill-o">optional</span></td><td>Proxy URL</td></tr>
           <tr><td class="td-key">cache</td><td class="td-type">dict</td><td><span class="pill pill-o">optional</span></td><td>HTTP cache config (<code>ttl</code> in seconds)</td></tr>
-          <tr><td class="td-key">retries</td><td class="td-type">int</td><td><span class="pill pill-o">optional</span></td><td>Number of retry attempts on failure (default: 3)</td></tr>
+          <tr><td class="td-key">retries</td><td class="td-type">int</td><td><span class="pill pill-o">optional</span></td><td>Retry attempts on failure (default: 3)</td></tr>
           <tr><td class="td-key">notify</td><td class="td-type">dict</td><td><span class="pill pill-o">optional</span></td><td>Webhook notification config</td></tr>
-          <tr><td class="td-key">wait_for</td><td class="td-type">string</td><td><span class="pill pill-o">optional</span></td><td>Playwright only: CSS selector to wait for before parsing</td></tr>
-          <tr><td class="td-key">screenshot</td><td class="td-type">bool</td><td><span class="pill pill-o">optional</span></td><td>Playwright only: save full-page screenshot</td></tr>
+          <tr><td class="td-key">wait_for</td><td class="td-type">string</td><td><span class="pill pill-o">optional</span></td><td>Playwright: CSS selector to wait for before parsing</td></tr>
+          <tr><td class="td-key">screenshot</td><td class="td-type">bool</td><td><span class="pill pill-o">optional</span></td><td>Playwright: save full-page screenshot</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <!-- ── SCRAPE ────────────────────────── -->
   <section class="doc-section" id="scrape">
     <h2>scrape:</h2>
     <p>Defines the fields to extract. Each field is a list: <strong>selector → attr config</strong>.</p>
@@ -643,13 +651,12 @@ OUTPUT_DIR=./output</pre>
           <tr><td class="td-key">href</td><td>The <code>href</code> attribute</td></tr>
           <tr><td class="td-key">src</td><td>The <code>src</code> attribute</td></tr>
           <tr><td class="td-key">class</td><td>Full class string (e.g. <code>"star-rating Three"</code>)</td></tr>
-          <tr><td class="td-key">any HTML attr</td><td>Any attribute name works: <code>data-id</code>, <code>aria-label</code>, etc.</td></tr>
+          <tr><td class="td-key">any HTML attr</td><td>Any attribute name: <code>data-id</code>, <code>aria-label</code>, etc.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <!-- ── PAGINATE ──────────────────────── -->
   <section class="doc-section" id="paginate">
     <h2>paginate:</h2>
     <p>Automatically follow "next page" links. Scrapit fetches each page and merges results into lists.</p>
@@ -662,12 +669,11 @@ OUTPUT_DIR=./output</pre>
     </div>
 
     <div class="callout">
-      <span class="callout-icon">ℹ</span>
-      <div>Pagination is supported by both backends. When paginating, fields with <code>all: true</code> are concatenated across pages.</div>
+      <span class="callout-icon">i</span>
+      <div>Supported by both backends. Fields with <code>all: true</code> are concatenated across pages.</div>
     </div>
   </section>
 
-  <!-- ── SPIDER ────────────────────────── -->
   <section class="doc-section" id="spider">
     <h2>follow: (spider mode)</h2>
     <p>Discover all links on a page and scrape each one. Good for blog indexes, product catalogs, and documentation sites.</p>
@@ -677,10 +683,10 @@ OUTPUT_DIR=./output</pre>
 <span class="key">use</span>: <span class="val">beautifulsoup</span>
 
 <span class="key">follow</span>:
-  <span class="key">selector</span>: <span class="str">'a.post-link'</span>   <span class="cmt"># links to follow</span>
+  <span class="key">selector</span>: <span class="str">'a.post-link'</span>
   <span class="key">attr</span>: <span class="val">href</span>
-  <span class="key">max</span>: <span class="num">100</span>                   <span class="cmt"># max pages to scrape</span>
-  <span class="key">same_domain</span>: <span class="val">true</span>          <span class="cmt"># don't leave the domain</span>
+  <span class="key">max</span>: <span class="num">100</span>
+  <span class="key">same_domain</span>: <span class="val">true</span>
 
 <span class="key">scrape</span>:
   <span class="key">title</span>:
@@ -694,40 +700,30 @@ OUTPUT_DIR=./output</pre>
     <p>Returns a list of dicts, one per page scraped. Each item includes the <code>url</code> field automatically.</p>
   </section>
 
-  <!-- ── HEADERS / PROXY / CACHE ──────── -->
   <section class="doc-section" id="headers">
     <h2>headers / proxy / cache</h2>
 
     <div class="code-block">
-      <pre><span class="key">site</span>: <span class="str">https://example.com</span>
-<span class="key">use</span>: <span class="val">beautifulsoup</span>
-
-<span class="cmt"># Custom HTTP headers</span>
-<span class="key">headers</span>:
+      <pre><span class="key">headers</span>:
   <span class="key">Accept-Language</span>: <span class="str">en-US,en;q=0.9</span>
   <span class="key">Referer</span>: <span class="str">https://google.com</span>
 
-<span class="cmt"># Cookies</span>
 <span class="key">cookies</span>:
   <span class="key">session_id</span>: <span class="str">abc123</span>
 
-<span class="cmt"># Proxy</span>
 <span class="key">proxy</span>: <span class="str">http://user:pass@proxy:8080</span>
 
-<span class="cmt"># Cache responses for 1 hour</span>
 <span class="key">cache</span>:
-  <span class="key">ttl</span>: <span class="num">3600</span>    <span class="cmt"># seconds. Set 0 to disable.</span>
+  <span class="key">ttl</span>: <span class="num">3600</span>    <span class="cmt"># seconds. 0 to disable.</span>
 
-<span class="cmt"># Retry on failure</span>
 <span class="key">retries</span>: <span class="num">3</span>    <span class="cmt"># exponential backoff</span>
 
-<span class="cmt"># Playwright-only</span>
-<span class="key">wait_for</span>: <span class="str">'#content'</span>   <span class="cmt"># wait for selector before parsing</span>
-<span class="key">screenshot</span>: <span class="val">true</span>        <span class="cmt"># save PNG to output/</span></pre>
+<span class="cmt"># Playwright only</span>
+<span class="key">wait_for</span>: <span class="str">'#content'</span>
+<span class="key">screenshot</span>: <span class="val">true</span></pre>
     </div>
   </section>
 
-  <!-- ── NOTIFY ────────────────────────── -->
   <section class="doc-section" id="notify">
     <h2>notify:</h2>
     <p>Fire a webhook when <code>--diff</code> detects a change. Works with Slack, Discord, or any HTTP endpoint.</p>
@@ -737,13 +733,12 @@ OUTPUT_DIR=./output</pre>
   <span class="key">webhook</span>: <span class="str">https://hooks.slack.com/services/...</span></pre>
     </div>
 
-    <p>The webhook receives a POST request with a JSON body containing the changed fields and the full new result.</p>
+    <p>The webhook receives a POST with a JSON body containing the changed fields and the full new result.</p>
   </section>
 
-  <!-- ── MULTI-SITE ────────────────────── -->
   <section class="doc-section" id="multi-site">
     <h2>Multi-site directives</h2>
-    <p>Scrape multiple URLs with the same directive by using <code>sites:</code> instead of <code>site:</code>.</p>
+    <p>Scrape multiple URLs with the same directive using <code>sites:</code> instead of <code>site:</code>.</p>
 
     <div class="code-block">
       <pre><span class="key">sites</span>:
@@ -763,7 +758,6 @@ OUTPUT_DIR=./output</pre>
 
   <hr/>
 
-  <!-- ── TRANSFORMS ────────────────────── -->
   <section class="doc-section" id="transforms">
     <h2>Transforms</h2>
     <p>Transforms run after scraping, per field, in order. Each step receives the output of the previous one.</p>
@@ -773,27 +767,21 @@ OUTPUT_DIR=./output</pre>
         <thead><tr><th>Transform</th><th>Argument</th><th>Description</th><th>Example</th></tr></thead>
         <tbody>
           <tr><td class="td-key">strip</td><td>—</td><td>Remove leading/trailing whitespace</td><td><code>- strip</code></td></tr>
-          <tr><td class="td-key">lower</td><td>—</td><td>Lowercase</td><td><code>- lower</code></td></tr>
-          <tr><td class="td-key">upper</td><td>—</td><td>Uppercase</td><td><code>- upper</code></td></tr>
-          <tr><td class="td-key">title</td><td>—</td><td>Title case</td><td><code>- title</code></td></tr>
-          <tr><td class="td-key">int</td><td>—</td><td>Parse integer, strips non-numeric chars</td><td><code>- int</code></td></tr>
-          <tr><td class="td-key">float</td><td>—</td><td>Parse float, strips non-numeric chars</td><td><code>- float</code></td></tr>
+          <tr><td class="td-key">lower / upper / title</td><td>—</td><td>Change case</td><td><code>- lower</code></td></tr>
+          <tr><td class="td-key">int / float</td><td>—</td><td>Parse number, strips non-numeric chars</td><td><code>- float</code></td></tr>
           <tr><td class="td-key">regex</td><td><code>pattern</code></td><td>Extract first regex match</td><td><code>{regex: '\d+'}</code></td></tr>
-          <tr><td class="td-key">regex_group</td><td><code>{pattern, group}</code></td><td>Extract a specific capture group</td><td><code>{regex_group: {pattern: '(\w+)', group: 1}}</code></td></tr>
-          <tr><td class="td-key">replace</td><td><code>{old: new, ...}</code></td><td>String substitution (multiple pairs)</td><td><code>{replace: {"£": "", ",": "."}}</code></td></tr>
-          <tr><td class="td-key">split</td><td><code>separator</code></td><td>Split string into list</td><td><code>{split: ","}</code></td></tr>
-          <tr><td class="td-key">join</td><td><code>separator</code></td><td>Join list into string</td><td><code>{join: " | "}</code></td></tr>
-          <tr><td class="td-key">first</td><td>—</td><td>Pick first item from list</td><td><code>- first</code></td></tr>
-          <tr><td class="td-key">last</td><td>—</td><td>Pick last item from list</td><td><code>- last</code></td></tr>
+          <tr><td class="td-key">regex_group</td><td><code>{pattern, group}</code></td><td>Extract a capture group</td><td><code>{regex_group: {pattern: '(\w+)', group: 1}}</code></td></tr>
+          <tr><td class="td-key">replace</td><td><code>{old: new}</code></td><td>String substitution (multiple pairs)</td><td><code>{replace: {"£": ""}}</code></td></tr>
+          <tr><td class="td-key">split / join</td><td><code>separator</code></td><td>Split string to list / join list to string</td><td><code>{split: ","}</code></td></tr>
+          <tr><td class="td-key">first / last</td><td>—</td><td>Pick first or last item from list</td><td><code>- first</code></td></tr>
           <tr><td class="td-key">default</td><td><code>value</code></td><td>Fallback if value is None</td><td><code>{default: "N/A"}</code></td></tr>
-          <tr><td class="td-key">slice</td><td><code>{start, end}</code> or <code>N</code></td><td>Substring or sublist</td><td><code>{slice: {end: 200}}</code></td></tr>
-          <tr><td class="td-key">prepend</td><td><code>string</code></td><td>Add text before value</td><td><code>{prepend: "https://site.com"}</code></td></tr>
-          <tr><td class="td-key">append</td><td><code>string</code></td><td>Add text after value</td><td><code>{append: " USD"}</code></td></tr>
-          <tr><td class="td-key">remove_tags</td><td>—</td><td>Strip HTML tags from string</td><td><code>- remove_tags</code></td></tr>
-          <tr><td class="td-key">template</td><td><code>"prefix {value}"</code></td><td>String template with <code>{value}</code> or <code>{field_name}</code></td><td><code>{template: "Price: {value}"}</code></td></tr>
-          <tr><td class="td-key">slugify</td><td>—</td><td>"Hello World!" → "hello-world"</td><td><code>- slugify</code></td></tr>
+          <tr><td class="td-key">slice</td><td><code>{start, end}</code></td><td>Substring or sublist</td><td><code>{slice: {end: 200}}</code></td></tr>
+          <tr><td class="td-key">prepend / append</td><td><code>string</code></td><td>Add text before or after value</td><td><code>{prepend: "https:"}</code></td></tr>
+          <tr><td class="td-key">remove_tags</td><td>—</td><td>Strip HTML tags</td><td><code>- remove_tags</code></td></tr>
+          <tr><td class="td-key">template</td><td><code>"prefix {value}"</code></td><td>String template with <code>{value}</code></td><td><code>{template: "USD {value}"}</code></td></tr>
+          <tr><td class="td-key">slugify</td><td>—</td><td>"Hello World" → "hello-world"</td><td><code>- slugify</code></td></tr>
           <tr><td class="td-key">truncate</td><td><code>N</code></td><td>Cut at N chars without breaking words</td><td><code>{truncate: 150}</code></td></tr>
-          <tr><td class="td-key">normalize_whitespace</td><td>—</td><td>Collapse multiple spaces/newlines into one</td><td><code>- normalize_whitespace</code></td></tr>
+          <tr><td class="td-key">normalize_whitespace</td><td>—</td><td>Collapse multiple spaces/newlines</td><td><code>- normalize_whitespace</code></td></tr>
         </tbody>
       </table>
     </div>
@@ -806,7 +794,7 @@ OUTPUT_DIR=./output</pre>
       <pre><span class="key">transform</span>:
   <span class="key">price</span>:
     - <span class="val">strip</span>                      <span class="cmt"># "  £ 12,99  " → "£ 12,99"</span>
-    - <span class="key">replace</span>: {<span class="str">"£"</span>: <span class="str">""</span>, <span class="str">","</span>: <span class="str">"."</span>}  <span class="cmt"># → " 12.99"</span>
+    - <span class="key">replace</span>: {<span class="str">"£"</span>: <span class="str">""</span>, <span class="str">","</span>: <span class="str">"."</span>}
     - <span class="val">float</span>                      <span class="cmt"># → 12.99</span>
 
   <span class="key">slug</span>:
@@ -815,16 +803,15 @@ OUTPUT_DIR=./output</pre>
     - <span class="val">slugify</span>                    <span class="cmt"># "My  Title!" → "my-title"</span>
 
   <span class="key">summary</span>:
-    - <span class="val">remove_tags</span>                <span class="cmt"># strip HTML</span>
+    - <span class="val">remove_tags</span>
     - <span class="val">normalize_whitespace</span>
-    - <span class="key">truncate</span>: <span class="num">200</span>             <span class="cmt"># cut at 200 chars</span></pre>
+    - <span class="key">truncate</span>: <span class="num">200</span></pre>
     </div>
   </section>
 
-  <!-- ── VALIDATION ────────────────────── -->
   <section class="doc-section" id="validation">
     <h2>Validation</h2>
-    <p>Validation runs after transforms. Invalid records are flagged in the output with <code>_valid: false</code> and <code>_errors</code> list. The scrape still completes.</p>
+    <p>Runs after transforms. Invalid records are flagged with <code>_valid: false</code> and <code>_errors</code>. The scrape still completes.</p>
 
     <div class="table-wrap">
       <table>
@@ -832,7 +819,7 @@ OUTPUT_DIR=./output</pre>
         <tbody>
           <tr><td class="td-key">required</td><td class="td-type">bool</td><td>Must not be <code>None</code></td></tr>
           <tr><td class="td-key">not_empty</td><td class="td-type">bool</td><td>Must not be empty string or list</td></tr>
-          <tr><td class="td-key">type</td><td class="td-type">string</td><td>Type check: <code>str</code>, <code>int</code>, <code>float</code>, <code>list</code>, <code>bool</code></td></tr>
+          <tr><td class="td-key">type</td><td class="td-type">string</td><td><code>str</code>, <code>int</code>, <code>float</code>, <code>list</code>, <code>bool</code></td></tr>
           <tr><td class="td-key">min / max</td><td class="td-type">number</td><td>Numeric range</td></tr>
           <tr><td class="td-key">min_length / max_length</td><td class="td-type">int</td><td>String or list length</td></tr>
           <tr><td class="td-key">pattern</td><td class="td-type">string</td><td>Regex must match</td></tr>
@@ -858,10 +845,9 @@ OUTPUT_DIR=./output</pre>
     </div>
   </section>
 
-  <!-- ── HOOKS ─────────────────────────── -->
   <section class="doc-section" id="hooks">
     <h2>Hooks</h2>
-    <p>Register Python callbacks for scrape lifecycle events without modifying core code.</p>
+    <p>Register Python callbacks for scrape lifecycle events.</p>
 
     <div class="table-wrap">
       <table>
@@ -879,17 +865,14 @@ OUTPUT_DIR=./output</pre>
     <div class="code-block">
       <pre><span class="kw">from</span> scraper <span class="kw">import</span> hooks
 
-<span class="cmt"># Log every scrape result</span>
 <span class="val">@hooks.on</span>(<span class="str">"after_scrape"</span>)
 <span class="kw">def</span> log_result(result, dados):
     print(f<span class="str">"scraped {result['url']} — {len(result)} fields"</span>)
 
-<span class="cmt"># Send alert on change</span>
 <span class="val">@hooks.on</span>(<span class="str">"on_change"</span>)
 <span class="kw">def</span> alert(changes, result):
     print(f<span class="str">"changed fields: {list(changes.keys())}"</span>)
 
-<span class="cmt"># Handle errors</span>
 <span class="val">@hooks.on</span>(<span class="str">"on_error"</span>)
 <span class="kw">def</span> handle_error(exc, dados):
     print(f<span class="str">"failed on {dados['site']}: {exc}"</span>)</pre>
@@ -898,7 +881,6 @@ OUTPUT_DIR=./output</pre>
 
   <hr/>
 
-  <!-- ── STORAGE ────────────────────────── -->
   <section class="doc-section" id="storage-json">
     <h2>Storage: JSON</h2>
     <p>Flag: <code>--json</code> &nbsp;·&nbsp; Output: <code>output/&lt;directive&gt;.json</code></p>
@@ -908,7 +890,7 @@ OUTPUT_DIR=./output</pre>
   <section class="doc-section" id="storage-csv">
     <h2>Storage: CSV</h2>
     <p>Flag: <code>--csv</code> &nbsp;·&nbsp; Output: <code>output/&lt;directive&gt;.csv</code></p>
-    <p>Appends one row per run. The header row is written only on the first run. Best for building time-series datasets.</p>
+    <p>Appends one row per run. Header is written only on the first run. Best for time-series datasets.</p>
   </section>
 
   <section class="doc-section" id="storage-sqlite">
@@ -917,7 +899,7 @@ OUTPUT_DIR=./output</pre>
     <p>Zero-config. All directives share one database file. Query with <code>scrapit query --backend sqlite</code>.</p>
     <div class="callout green">
       <span class="callout-icon">✓</span>
-      <div>SQLite is the recommended default for most use cases. No server required, included in Python's stdlib.</div>
+      <div>Recommended default. No server required — SQLite is included in Python's stdlib.</div>
     </div>
   </section>
 
@@ -940,10 +922,9 @@ MONGO_COLLECTION=results</pre>
 
   <hr/>
 
-  <!-- ── AI: QUICK API ─────────────────── -->
   <section class="doc-section" id="ai-api">
     <h2>AI: Quick API</h2>
-    <p>Use Scrapit programmatically without YAML — great for feeding pages into LLMs directly.</p>
+    <p>Use Scrapit programmatically without YAML — ideal for feeding pages into LLMs directly.</p>
 
     <div class="code-block">
       <pre><span class="kw">from</span> scraper.integrations <span class="kw">import</span> (
@@ -954,21 +935,17 @@ MONGO_COLLECTION=results</pre>
     scrape_directive,       <span class="cmt"># run a YAML directive</span>
 )
 
-<span class="cmt"># Clean readable text — strips nav/scripts/footer</span>
 text = scrape_url(<span class="str">"https://example.com"</span>)
 
-<span class="cmt"># Structured page metadata</span>
 page = scrape_page(<span class="str">"https://example.com"</span>)
 <span class="cmt"># → {url, title, description, main_content, links, word_count}</span>
 
-<span class="cmt"># Agent-defined fields via CSS selectors</span>
 data = scrape_with_selectors(
     <span class="str">"https://books.toscrape.com/..."</span>,
     selectors={<span class="str">"title"</span>: <span class="str">"h1"</span>, <span class="str">"price"</span>: <span class="str">"p.price_color"</span>},
     all_matches={<span class="str">"tags"</span>: <span class="val">True</span>},
 )
 
-<span class="cmt"># Parallel scraping</span>
 pages = scrape_many(
     [<span class="str">"https://a.com"</span>, <span class="str">"https://b.com"</span>],
     mode=<span class="str">"page"</span>,
@@ -977,7 +954,6 @@ pages = scrape_many(
     </div>
   </section>
 
-  <!-- ── AI: MCP ───────────────────────── -->
   <section class="doc-section" id="ai-mcp">
     <h2>AI: MCP Server</h2>
     <p>Run Scrapit as an MCP server so Claude Desktop, Cursor, and Claude Code can call it as a native tool.</p>
@@ -1011,7 +987,7 @@ pages = scrape_many(
         <thead><tr><th>Tool</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td class="td-key">scrape_url_tool</td><td>Fetch any URL, return clean text</td></tr>
-          <tr><td class="td-key">scrape_page_tool</td><td>Fetch any URL, return title + description + links + content as JSON</td></tr>
+          <tr><td class="td-key">scrape_page_tool</td><td>Fetch any URL, return title + description + links + content</td></tr>
           <tr><td class="td-key">scrape_with_selectors_tool</td><td>Extract specific fields using CSS selectors</td></tr>
           <tr><td class="td-key">run_directive_tool</td><td>Run a pre-configured YAML directive by name</td></tr>
         </tbody>
@@ -1019,7 +995,6 @@ pages = scrape_many(
     </div>
   </section>
 
-  <!-- ── AI: ANTHROPIC ─────────────────── -->
   <section class="doc-section" id="ai-anthropic">
     <h2>AI: Anthropic SDK</h2>
     <div class="code-block">
@@ -1036,9 +1011,7 @@ agent = ScrapitAnthropicAgent(
     system=<span class="str">"You are a research assistant..."</span>,
 )
 
-answer = agent.run(
-    <span class="str">"What are the top 5 stories on Hacker News right now?"</span>
-)
+answer = agent.run(<span class="str">"What are the top 5 stories on Hacker News?"</span>)
 print(answer)</pre>
     </div>
 
@@ -1047,12 +1020,11 @@ print(answer)</pre>
       <pre><span class="kw">import</span> anthropic
 <span class="kw">from</span> scraper.integrations.anthropic <span class="kw">import</span> as_anthropic_tools, handle_tool_call
 
-client = anthropic.Anthropic()
-tools  = as_anthropic_tools()
+client   = anthropic.Anthropic()
+tools    = as_anthropic_tools()
 
 response = client.messages.create(
-    model=<span class="str">"claude-opus-4-6"</span>,
-    max_tokens=<span class="num">1024</span>,
+    model=<span class="str">"claude-opus-4-6"</span>, max_tokens=<span class="num">1024</span>,
     tools=tools,
     messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"..."</span>}],
 )
@@ -1063,7 +1035,6 @@ response = client.messages.create(
     </div>
   </section>
 
-  <!-- ── AI: OPENAI ────────────────────── -->
   <section class="doc-section" id="ai-openai">
     <h2>AI: OpenAI SDK</h2>
     <div class="code-block">
@@ -1074,7 +1045,7 @@ response = client.messages.create(
     <div class="code-block">
       <pre><span class="kw">from</span> scraper.integrations.openai <span class="kw">import</span> ScrapitOpenAIAgent
 
-agent = ScrapitOpenAIAgent(model=<span class="str">"gpt-4o"</span>)
+agent  = ScrapitOpenAIAgent(model=<span class="str">"gpt-4o"</span>)
 answer = agent.run(<span class="str">"Summarize the Python Wikipedia page."</span>)
 print(answer)</pre>
     </div>
@@ -1084,8 +1055,8 @@ print(answer)</pre>
       <pre><span class="kw">from</span> openai <span class="kw">import</span> OpenAI
 <span class="kw">from</span> scraper.integrations.openai <span class="kw">import</span> as_openai_functions, handle_function_call
 
-client = OpenAI()
-tools  = as_openai_functions()
+client   = OpenAI()
+tools    = as_openai_functions()
 
 response = client.chat.completions.create(
     model=<span class="str">"gpt-4o"</span>, tools=tools,
@@ -1093,13 +1064,10 @@ response = client.chat.completions.create(
 )
 
 <span class="kw">for</span> call <span class="kw">in</span> response.choices[<span class="num">0</span>].message.tool_calls:
-    result = handle_function_call(
-        call.function.name, call.function.arguments
-    )</pre>
+    result = handle_function_call(call.function.name, call.function.arguments)</pre>
     </div>
   </section>
 
-  <!-- ── AI: LANGCHAIN ─────────────────── -->
   <section class="doc-section" id="ai-langchain">
     <h2>AI: LangChain / CrewAI / LangGraph</h2>
     <div class="code-block">
@@ -1121,7 +1089,7 @@ tools = ScrapitToolkit(directives=[<span class="str">"wikipedia"</span>, <span c
         <tbody>
           <tr><td class="td-key">ScrapitTool</td><td>URL string</td><td>Clean page text</td></tr>
           <tr><td class="td-key">ScrapitPageTool</td><td>URL string</td><td>JSON with title, description, links, word_count</td></tr>
-          <tr><td class="td-key">ScrapitSelectorTool</td><td>JSON <code>{"url": "...", "selectors": {...}}</code></td><td>JSON with extracted fields</td></tr>
+          <tr><td class="td-key">ScrapitSelectorTool</td><td><code>{"url": "...", "selectors": {...}}</code></td><td>JSON with extracted fields</td></tr>
           <tr><td class="td-key">ScrapitDirectiveTool</td><td>Directive name</td><td>JSON with scraped data</td></tr>
         </tbody>
       </table>
@@ -1142,7 +1110,7 @@ agent.run(<span class="str">"What's on the front page of Hacker News?"</span>)</
 
     <h3>CrewAI</h3>
     <div class="code-block">
-      <pre><span class="kw">from</span> crewai <span class="kw">import</span> Agent, Task, Crew
+      <pre><span class="kw">from</span> crewai <span class="kw">import</span> Agent
 
 researcher = Agent(
     role=<span class="str">"Web Researcher"</span>,
@@ -1159,13 +1127,10 @@ researcher = Agent(
 
 loader = ScrapitLoader(<span class="str">"https://example.com"</span>)
 docs   = loader.load()
-
-splitter = RecursiveCharacterTextSplitter(chunk_size=<span class="num">1000</span>)
-chunks   = splitter.split_documents(docs)</pre>
+chunks = RecursiveCharacterTextSplitter(chunk_size=<span class="num">1000</span>).split_documents(docs)</pre>
     </div>
   </section>
 
-  <!-- ── AI: LLAMAINDEX ─────────────────── -->
   <section class="doc-section" id="ai-llamaindex">
     <h2>AI: LlamaIndex</h2>
     <div class="code-block">
@@ -1182,15 +1147,13 @@ docs = reader.load_data(url=<span class="str">"https://example.com"</span>)
 docs = reader.load_data(urls=[<span class="str">"https://a.com"</span>, <span class="str">"https://b.com"</span>])
 docs = reader.load_data(directive=<span class="str">"wikipedia"</span>)
 
-index  = VectorStoreIndex.from_documents(docs)
-engine = index.as_query_engine()
+engine = VectorStoreIndex.from_documents(docs).as_query_engine()
 result = engine.query(<span class="str">"What is the main topic?"</span>)</pre>
     </div>
   </section>
 
   <hr/>
 
-  <!-- ── PYTHON API ─────────────────────── -->
   <section class="doc-section" id="python-api">
     <h2>Python API</h2>
     <p>Run directives programmatically from your own Python code.</p>
@@ -1209,7 +1172,6 @@ sqlite.save(result, <span class="str">"hn"</span>)</pre>
     </div>
   </section>
 
-  <!-- ── QUEUE ─────────────────────────── -->
   <section class="doc-section" id="queue">
     <h2>RabbitMQ queue</h2>
     <p>Send directives to a background worker queue. Useful for scheduled scraping at scale.</p>
@@ -1227,10 +1189,11 @@ call_producer(<span class="str">"directives/hn.yaml"</span>)
 <span class="cmd">$</span> python -m scraper.queue.consumer</pre>
     </div>
 
-    <p>Configure the connection via <code>RABBITMQ_HOST</code> and <code>RABBITMQ_QUEUE</code> in <code>.env</code>. Workers scrape each received directive and save to MongoDB automatically.</p>
+    <p>Configure via <code>RABBITMQ_HOST</code> and <code>RABBITMQ_QUEUE</code> in <code>.env</code>. Workers save results to MongoDB automatically.</p>
   </section>
 
 </main>
+</div>
 </div>
 
 <script>
@@ -1245,7 +1208,7 @@ call_producer(<span class="str">"directives/hn.yaml"</span>)
         if (active) active.classList.add('active');
       }
     });
-  }, { rootMargin: '-20% 0px -70% 0px' });
+  }, { rootMargin: '-15% 0px -75% 0px' });
 
   sections.forEach(s => observer.observe(s));
 </script>
