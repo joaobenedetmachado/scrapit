@@ -24,7 +24,7 @@ No code required for new targets. Just write a YAML.
 | **Multi-site** | Scrape multiple URLs with the same spec in one directive |
 | **Transform pipeline** | Declarative field transforms: strip, regex, float, replace, split… |
 | **Validation** | Per-field rules: required, type, min/max, pattern, enum |
-| **Four output backends** | JSON, CSV (append), SQLite (zero-config), MongoDB |
+| **Five output backends** | JSON, CSV (append), SQLite (zero-config), MongoDB, PostgreSQL |
 | **HTTP cache** | File-based cache with TTL — avoid re-fetching during dev |
 | **Change detection** | Diff result against previous run, fire webhook on change |
 | **Webhook notifications** | POST JSON payload to any URL when changes detected |
@@ -316,6 +316,7 @@ All outputs go to `output/` at the project root.
 | `output/scrapit.db` | SQLite database with all scrapes |
 | `output/scraper.log` | Full log (also printed to console) |
 | `output/<name>_<ts>.png` | Screenshot (Playwright + `screenshot: true`) |
+| PostgreSQL `scrapes` table | All scrapes saved to PostgreSQL database |
 
 ---
 

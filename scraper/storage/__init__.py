@@ -1,0 +1,1 @@
+from scraper.storage import postgres as postgres_storage

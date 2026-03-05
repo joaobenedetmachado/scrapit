@@ -8,3 +8,4 @@ playwright
 openpyxl
 google-api-python-client
 google-auth
+psycopg2-binary 

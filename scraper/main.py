@@ -10,7 +10,7 @@ Commands:
 
 Run `python -m scraper.main <command> --help` for details.
 """
-
+from scraper.storage import postgres as postgres_storage
 import argparse
 import asyncio
 import json
@@ -63,7 +63,11 @@ def _save(result: dict | list, name: str, dest: str, *, output_dir: str | None =
         elif dest == "excel":
             excel_storage.save(item, name, output_dir=output_dir)
         elif dest == "sheets":
-            gs_storage.save(item, name, spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
+            url = gs_storage.save_batch(items, name, spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
+            print(f"→ appended {len(items)} row(s) to Google Sheets: {url}")
+        elif dest == "postgres":
+            postgres_storage.save(item, name)
+            print(f"→ saved {len(items)} record(s) to PostgreSQL.")
         else:
             # json: save list or single dict
             break
@@ -269,6 +273,8 @@ def _dest(args) -> str:
         return "excel"
     if getattr(args, "sheets", False):
         return "sheets"
+    if getattr(args, "postgres", False):   
+        return "postgres"    
     return "json"
 
 
@@ -280,6 +286,7 @@ def _add_output_args(p):
     group.add_argument("--sqlite", action="store_true", help="Save to output/scrapit.db")
     group.add_argument("--excel", action="store_true", help="Append to output/<name>.xlsx")
     group.add_argument("--sheets", action="store_true", help="Append to Google Sheets")
+    group.add_argument("--postgres", action="store_true", help="Save to PostgreSQL")  
     p.add_argument("--output-dir", help="Custom output directory (overrides default 'output/')")
     p.add_argument("--sheets-id", help="Google Sheets spreadsheet ID (required for --sheets)")
     p.add_argument("--sheets-credentials", help="Path to Google credentials JSON file (required for --sheets)")
