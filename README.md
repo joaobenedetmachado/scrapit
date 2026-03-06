@@ -141,6 +141,7 @@ python -m scraper.main scrape <directive> [--json|--csv|--sqlite|--mongo] [--pre
 | `--sqlite` | Save to `output/scrapit.db` |
 | `--mongo` | Save to MongoDB |
 | `--excel` | Append to `output/<name>.xlsx` |
+| `--format` | JSON format: `pretty` (indented, default) or `compact` (minified) |
 | `--preview` | Print result, do not save |
 | `--diff` | Compare with previous JSON output and show changes |
 
@@ -303,7 +304,10 @@ notify:
 |-----------|----------|-------------|
 | `strip` | — | Strip whitespace |
 | `lower` / `upper` / `title` | — | Change case |
+| `capitalize` | — | First character upper, rest unchanged |
+| `sentence_case` | — | First character upper, rest lower |
 | `int` / `float` | — | Parse number (removes non-numeric chars) |
+| `count` | — | Length of a string or list |
 | `regex` | `pattern` | Extract first regex match |
 | `regex_group` | `{pattern, group}` | Extract specific capture group |
 | `replace` | `{old: new}` | String substitution (multiple pairs) |

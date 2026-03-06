@@ -3,8 +3,11 @@ Transform pipeline — apply declarative transforms to scraped field values.
 
 Supported transforms (use in directive under `transform:`):
   strip            — strip whitespace
-  lower / upper    — change case
+  lower / upper / title — change case
+  capitalize       — capitalize first character only
+  sentence_case    — first char upper, rest lower
   int / float      — type cast
+  count            — length of a string or list
   regex: pattern   — extract first regex match
   replace: {old: new} — string replace
   split: ","       — split into list
@@ -51,6 +54,25 @@ def _upper(value, _, **__):
 @_t("title")
 def _title(value, _, **__):
     return value.title() if isinstance(value, str) else value
+
+
+@_t("capitalize")
+def _capitalize(value, _, **__):
+    return value.capitalize() if isinstance(value, str) else value
+
+
+@_t("sentence_case")
+def _sentence_case(value, _, **__):
+    if not isinstance(value, str) or not value:
+        return value
+    return value[0].upper() + value[1:].lower()
+
+
+@_t("count")
+def _count(value, _, **__):
+    if isinstance(value, (str, list)):
+        return len(value)
+    return value
 
 
 @_t("int")

@@ -50,8 +50,8 @@ def _resolve(path_str: str) -> Path:
 
 # ── Storage dispatch ──────────────────────────────────────────────────────────
 
-def _save(result: dict | list, name: str, dest: str, *, output_dir: str | None = None, 
-          spreadsheet_id: str = None, credentials_path: str = None):
+def _save(result: dict | list, name: str, dest: str, *, output_dir: str | None = None,
+          compact: bool = False, spreadsheet_id: str = None, credentials_path: str = None):
     items = result if isinstance(result, list) else [result]
     for item in items:
         if dest == "mongo":
@@ -72,7 +72,7 @@ def _save(result: dict | list, name: str, dest: str, *, output_dir: str | None =
             # json: save list or single dict
             break
     if dest == "json":
-        out = json_file.save(result, name, output_dir=output_dir)
+        out = json_file.save(result, name, output_dir=output_dir, compact=compact)
         print(f"→ saved: {out}")
     elif dest == "mongo":
         print(f"→ saved {len(items)} record(s) in MongoDB.")
@@ -98,6 +98,7 @@ def _run_one(
     dest: str,
     *,
     output_dir: str | None = None,
+    compact: bool = False,
     preview: bool = False,
     detect_changes: bool = False,
     notify_config: dict | None = None,
@@ -135,7 +136,7 @@ def _run_one(
                 print("→ no changes detected.")
 
     if not preview:
-        _save(result, name, dest, output_dir=output_dir, 
+        _save(result, name, dest, output_dir=output_dir, compact=compact,
               spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
         from scraper import hooks
         hooks.fire("on_save", result, dest)
@@ -147,10 +148,11 @@ def cmd_scrape(args):
     path = _resolve(args.directive)
     dest = _dest(args)
     output_dir = getattr(args, 'output_dir', None)
+    compact = getattr(args, 'format', 'pretty') == 'compact'
     spreadsheet_id = getattr(args, 'sheets_id', None)
     credentials_path = getattr(args, 'sheets_credentials', None)
-    _run_one(path, dest, output_dir=output_dir, preview=args.preview, detect_changes=args.diff,
-             spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
+    _run_one(path, dest, output_dir=output_dir, compact=compact, preview=args.preview,
+             detect_changes=args.diff, spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
 
 
 def cmd_batch(args):
@@ -166,6 +168,7 @@ def cmd_batch(args):
 
     dest = _dest(args)
     output_dir = getattr(args, 'output_dir', None)
+    compact = getattr(args, 'format', 'pretty') == 'compact'
     spreadsheet_id = getattr(args, 'sheets_id', None)
     credentials_path = getattr(args, 'sheets_credentials', None)
     quiet = getattr(args, 'quiet', False)
@@ -175,8 +178,8 @@ def cmd_batch(args):
         print(f"  {y.name}")
         print(f"{'─' * 50}")
         try:
-            _run_one(y, dest, output_dir=output_dir, preview=args.preview, detect_changes=args.diff,
-                     spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
+            _run_one(y, dest, output_dir=output_dir, compact=compact, preview=args.preview,
+                     detect_changes=args.diff, spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
             ok += 1
         except Exception as e:
             log(f"batch: error in {y.name}: {e}", "error")
@@ -431,6 +434,8 @@ def _add_output_args(p):
     group.add_argument("--sheets", action="store_true", help="Append to Google Sheets")
     group.add_argument("--postgres", action="store_true", help="Save to PostgreSQL")  
     p.add_argument("--output-dir", help="Custom output directory (overrides default 'output/')")
+    p.add_argument("--format", choices=["pretty", "compact"], default="pretty",
+                   help="JSON output format: pretty (indented, default) or compact (minified)")
     p.add_argument("--sheets-id", help="Google Sheets spreadsheet ID (required for --sheets)")
     p.add_argument("--sheets-credentials", help="Path to Google credentials JSON file (required for --sheets)")
     p.add_argument("--preview", action="store_true", help="Print only, do not save")
