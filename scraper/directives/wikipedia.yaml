@@ -1,15 +1,35 @@
-site: https://pt.wikipedia.org/wiki/Arara-vermelha
+site: https://en.wikipedia.org/wiki/Python_(programming_language)
 use: beautifulsoup
 
 scrape:
   title:
-    - '.mw-page-title-main'
-    - attr: 'text'
+    - 'h1#firstHeading'
+    - attr: text
 
-  note:
-    - '.hatnote'
-    - attr: 'text'
+  summary:
+    - 'div#mw-content-text div.mw-parser-output > p:not(.mw-empty-elt)'
+    - attr: text
+  
+  sections:
+    - 'h2 .mw-headline'
+    - attr: text
+      all: true
 
-  description:
-    - 'p'
-    - attr: 'text'
+  categories:
+    - 'div#mw-normal-catlinks ul li a'
+    - attr: text
+      all: true
+
+transform:
+  summary:
+    - remove_tags
+    - normalize_whitespace
+  title:
+    - strip
+    - normalize_whitespace
+
+validate:
+  title:
+    required: true
+  summary:
+    required: true   
