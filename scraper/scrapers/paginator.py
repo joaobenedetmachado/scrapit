@@ -43,7 +43,7 @@ def paginate(dados: dict) -> list[dict]:
     for page_num in range(max_pages):
         html = fetch_html(current_url, **fetch_kw)
         soup = BeautifulSoup(html, "html.parser")
-        result = parse_page(soup, current_url, dados["scrape"])
+        result = parse_page(soup, current_url, dados["scrape"], raw_html=html)
         result["_page"] = page_num + 1
         results.append(result)
 

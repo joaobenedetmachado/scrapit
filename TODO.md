@@ -13,7 +13,7 @@
 
 - [x] **Add `all` param to `scrape_with_selectors`** — `all_matches: dict[str, bool]` param added ✓
 - [x] **Expose `scrape_many` as MCP tool** — `scrape_many_tool` added ✓
-- [ ] **Add `scrape_paginated` tool** — accepts a URL + next-page selector + max_pages, returns all results
+- [x] **Add `scrape_paginated` tool** — `scrape_paginated_tool` added to MCP ✓
 - [x] **Add `run_batch` tool** — runs all directives in a folder, returns combined results ✓
 - [ ] **Better tool descriptions** — current descriptions are dev-facing, not LLM-facing. Rewrite to guide the model on when to use each tool and what to expect back
 
@@ -21,9 +21,9 @@
 
 ## 🟡 Core Features
 
-- [ ] **XPath selector support** — CSS selectors don't work for XML/RSS feeds or complex HTML. Add `xpath:` prefix or a `use_xpath: true` option per field
+- [x] **XPath selector support** — use `xpath: //div/text()` prefix in any selector field ✓
 - [x] **User-agent rotation** — pool of 7 real browser UAs rotating per request ✓
-- [ ] **Robots.txt compliance** — add `respect_robots: true` option (default false). Parse and cache robots.txt before scraping
+- [x] **Robots.txt compliance** — `respect_robots: true` directive option added ✓
 - [ ] **Async concurrent scraping** — `scrape_many` currently runs sequentially. Use `asyncio` + `httpx` or `aiohttp` for parallel fetches
 - [ ] **Resume interrupted scrapes** — spider/paginated scrapes die mid-run with no recovery. Save progress to SQLite, add `--resume` flag
 - [x] **Data deduplication** — `unique_on: [field1, field2]` param added to SQLite `save()` ✓
@@ -43,7 +43,7 @@
 
 ## 🔵 AI / LLM Features
 
-- [ ] **`scrapit ai-init`** — natural language → YAML directive. "Scrape product names and prices from amazon.com/bestsellers" → generates the YAML using Claude/OpenAI
+- [x] **`scrapit ai-init`** — fetches URL + sends to Claude → generates YAML directive automatically ✓
 - [ ] **Auto-selector detection** — given a URL and field names, use an LLM to suggest the best CSS selectors. Add as `scrapit suggest-selectors <url> --fields title,price,rating`
 - [ ] **Smart pagination detection** — automatically detect "next page" patterns (common CSS selectors, URL patterns) instead of requiring manual config
 - [ ] **MCP tool: `generate_directive`** — Claude can call this to auto-generate a YAML directive for any URL, which it then runs immediately

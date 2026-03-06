@@ -111,9 +111,58 @@ def fetch_html(
     raise last_exc
 
 
+# ── XPath support ─────────────────────────────────────────────────────────────
+
+def _xpath_select(raw_html: str, xpath_expr: str, attr: str, get_all: bool):
+    """Run an XPath query against raw HTML. Requires lxml."""
+    try:
+        from lxml import html as lxml_html
+    except ImportError:
+        raise ImportError(
+            "lxml is required for XPath selectors.\n"
+            "Install with: pip install lxml"
+        )
+
+    tree = lxml_html.fromstring(raw_html)
+    elements = tree.xpath(xpath_expr)
+    if not elements:
+        return [] if get_all else None
+
+    def _get(el):
+        if isinstance(el, str):
+            return el.strip()
+        if attr == "text":
+            return (el.text_content() or "").strip()
+        elif attr == "html":
+            from lxml import etree
+            return etree.tostring(el, encoding="unicode")
+        else:
+            return el.get(attr)
+
+    return [_get(el) for el in elements] if get_all else _get(elements[0])
+
+
+# ── Robots.txt ────────────────────────────────────────────────────────────────
+
+def _is_allowed_by_robots(url: str, user_agent: str = "*") -> bool:
+    """Return True if the URL is allowed by the site's robots.txt."""
+    from urllib.robotparser import RobotFileParser
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
+    rp = RobotFileParser()
+    rp.set_url(robots_url)
+    try:
+        rp.read()
+    except Exception:
+        return True  # Can't fetch robots.txt → assume allowed
+    return rp.can_fetch(user_agent, url)
+
+
 # ── Page parsing ──────────────────────────────────────────────────────────────
 
-def parse_page(soup: BeautifulSoup, url: str, scrape_spec: dict) -> dict:
+def parse_page(soup: BeautifulSoup, url: str, scrape_spec: dict, raw_html: str = "") -> dict:
     """Extract fields from a BeautifulSoup object according to scrape_spec."""
     result = {}
 
@@ -123,7 +172,14 @@ def parse_page(soup: BeautifulSoup, url: str, scrape_spec: dict) -> dict:
         attr = options.get("attr", "text")
         get_all = options.get("all", False)
 
-        # Support fallback selectors: single string or list of strings
+        # ── XPath selector ────────────────────────────────────────────────────
+        first_sel = selectors_raw[0] if isinstance(selectors_raw, list) else selectors_raw
+        if isinstance(first_sel, str) and first_sel.startswith("xpath:"):
+            xpath_expr = first_sel[6:].strip()
+            result[key] = _xpath_select(raw_html, xpath_expr, attr, get_all)
+            continue
+
+        # ── CSS selectors (with fallback list) ────────────────────────────────
         selectors = (
             selectors_raw if isinstance(selectors_raw, list) else [selectors_raw]
         )
@@ -139,7 +195,6 @@ def parse_page(soup: BeautifulSoup, url: str, scrape_spec: dict) -> dict:
             continue
 
         if get_all:
-            # Grab all matching elements (use first selector that yields results)
             for sel in selectors:
                 elements = soup.select(sel)
                 if elements:
@@ -172,12 +227,14 @@ def _extract_many(elements, attr: str) -> list:
 
 def scrape(dados: dict) -> dict:
     """Scrape a single URL using BeautifulSoup."""
-    # Add delay between requests if specified
     delay = dados.get("delay", 0)
     if delay > 0:
-        import time
         time.sleep(delay)
-    
+
+    if dados.get("respect_robots", False):
+        if not _is_allowed_by_robots(dados["site"]):
+            raise PermissionError(f"robots.txt disallows scraping: {dados['site']}")
+
     cache_cfg = dados.get("cache", {})
     cache_ttl = cache_cfg.get("ttl", 0) if isinstance(cache_cfg, dict) else 0
 
@@ -192,4 +249,4 @@ def scrape(dados: dict) -> dict:
         delay=dados.get("delay", 0),
     )
     soup = BeautifulSoup(html, "html.parser")
-    return parse_page(soup, dados["site"], dados["scrape"])
+    return parse_page(soup, dados["site"], dados["scrape"], raw_html=html)

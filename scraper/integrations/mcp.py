@@ -175,6 +175,45 @@ def create_server():
         return json.dumps(result, indent=2, default=str)
 
     @mcp.tool()
+    def scrape_paginated_tool(
+        url: str,
+        selectors: dict[str, str],
+        next_selector: str,
+        max_pages: int = 10,
+    ) -> str:
+        """
+        Scrape a paginated website by following "next page" links automatically.
+
+        Use this when a site splits content across multiple pages (search results,
+        blog archives, product listings) and you want all pages at once.
+
+        Args:
+            url: Starting URL (first page).
+            selectors: Dict mapping field names to CSS selectors.
+                Example: {"title": "h2.post-title", "link": "a.read-more"}
+            next_selector: CSS selector for the "next page" link.
+                Example: "a.next", "li.next > a", "a[rel=next]"
+            max_pages: Maximum number of pages to follow (default 10).
+
+        Returns:
+            JSON array of results, one object per page, each with a "_page" field.
+        """
+        from scraper.scrapers.paginator import paginate
+
+        dados = {
+            "site": url,
+            "use": "beautifulsoup",
+            "scrape": {field: [sel, {"attr": "text"}] for field, sel in selectors.items()},
+            "paginate": {
+                "selector": next_selector,
+                "attr": "href",
+                "max_pages": max_pages,
+            },
+        }
+        results = paginate(dados)
+        return json.dumps(results, indent=2, default=str)
+
+    @mcp.tool()
     def run_batch_tool(folder: str | None = None) -> str:
         """
         Run all Scrapit directives in a folder and return combined results.

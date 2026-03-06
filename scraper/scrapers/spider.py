@@ -56,7 +56,7 @@ class Spider:
             try:
                 html = fetch_html(url, **self._fetch_kw)
                 soup = BeautifulSoup(html, "html.parser")
-                result = parse_page(soup, url, self.dados["scrape"])
+                result = parse_page(soup, url, self.dados["scrape"], raw_html=html)
                 result["_source"] = self.dados["site"]
                 results.append(result)
                 log(f"spider: scraped {url}")

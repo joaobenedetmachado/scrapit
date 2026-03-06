@@ -161,6 +161,17 @@ python -m scraper.main list [--dir path/to/folder]
 
 Shows site, backend, fields, transforms, validation rules, and cache config.
 
+### `ai-init` — generate a directive with Claude
+
+```bash
+scrapit ai-init https://news.ycombinator.com --name hackernews
+scrapit ai-init https://books.toscrape.com --fields "title,price,rating"
+```
+
+Fetches the page, sends the content to Claude, and generates a ready-to-use YAML directive. Requires `pip install anthropic` and `ANTHROPIC_API_KEY` in your environment.
+
+---
+
 ### `query` — read stored data
 
 ```bash

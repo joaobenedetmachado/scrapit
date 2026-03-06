@@ -426,6 +426,77 @@ def cmd_doctor(_args):
         print("Run: pip install -r requirements.txt")
 
 
+def cmd_ai_init(args):
+    try:
+        import anthropic as _anthropic
+    except ImportError:
+        print("error: anthropic package required.\nInstall with: pip install anthropic", file=sys.stderr)
+        sys.exit(1)
+
+    url = args.url
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+
+    name = args.name or url.split("//")[-1].split("/")[0].replace(".", "_").replace("-", "_")
+    fields_hint = f"Fields to extract: {args.fields}." if args.fields else \
+        "Identify the 4–6 most useful fields to extract from this page."
+
+    print(f"→ fetching {url} for context...")
+    from scraper.integrations import scrape_url
+    try:
+        page_text = scrape_url(url)[:4000]
+    except Exception as e:
+        print(f"error fetching page: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    prompt = f"""You are a web scraping expert. Generate a valid Scrapit YAML directive for this URL.
+
+URL: {url}
+{fields_hint}
+
+Page content (truncated):
+{page_text}
+
+Output ONLY valid Scrapit YAML — no explanation, no markdown fences. Use this format:
+
+site: {url}
+use: beautifulsoup
+
+scrape:
+  field_name:
+    - 'css-selector'
+    - attr: text
+
+Add transform: and validate: sections if they make sense for the data."""
+
+    print("→ generating directive with Claude...")
+    client = _anthropic.Anthropic()
+    resp = client.messages.create(
+        model="claude-opus-4-6",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    yaml_content = resp.content[0].text.strip()
+    # Strip markdown fences if model added them
+    if yaml_content.startswith("```"):
+        lines = yaml_content.splitlines()
+        yaml_content = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+
+    out_path = _DIRECTIVES_DIR / f"{name}.yaml"
+    if out_path.exists() and not args.force:
+        ans = input(f"\n  {out_path} already exists. Overwrite? (y/N): ").strip().lower()
+        if ans != "y":
+            print("aborted.")
+            sys.exit(0)
+
+    out_path.write_text(yaml_content)
+    print(f"\n→ Created {out_path.relative_to(_ROOT)}")
+    print("\nNext steps:")
+    print(f"  1. Review and adjust selectors: {out_path.relative_to(_ROOT)}")
+    print(f"  2. Preview: scrapit scrape {name} --preview")
+    print(f"  3. Save:    scrapit scrape {name} --json")
+
+
 def cmd_cache(args):
     from scraper import cache as _cache
     if args.action == "stats":
@@ -524,6 +595,13 @@ def main():
     p_cache.add_argument("action", choices=["stats", "clear", "invalidate"])
     p_cache.add_argument("--url", help="URL to invalidate (for 'invalidate' action)")
 
+    # ── ai-init ───────────────────────────────────────────────────────────────
+    p_ai = sub.add_parser("ai-init", help="Generate a directive from a URL using Claude")
+    p_ai.add_argument("url", help="URL to generate a directive for")
+    p_ai.add_argument("--name", help="Output directive name (default: derived from URL)")
+    p_ai.add_argument("--fields", help="Comma-separated fields to extract (e.g. title,price,rating)")
+    p_ai.add_argument("--force", action="store_true", help="Overwrite existing directive without asking")
+
     # ── doctor ────────────────────────────────────────────────────────────────
     sub.add_parser("doctor", help="Check installed dependencies and environment")
 
@@ -531,6 +609,7 @@ def main():
 
     dispatch = {
         "init": cmd_init,
+        "ai-init": cmd_ai_init,
         "scrape": cmd_scrape,
         "batch": cmd_batch,
         "list": cmd_list,
