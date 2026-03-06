@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scrapit-scraper"
-version = "0.1.0"
+version = "0.2.0"
 description = "YAML-driven web scraper framework with AI agent integrations"
 readme = "README.md"
 license = { file = "LICENSE" }
