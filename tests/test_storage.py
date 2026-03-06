@@ -45,14 +45,14 @@ class TestCSVStorage:
             assert "second" in lines[2]
 
     def test_save_creates_header_on_first_write(self):
-        """First save should."""
-        with tempfile create CSV with header.TemporaryDirectory() as tmpdir:
+        """First save should create CSV with header."""
+        with tempfile.TemporaryDirectory() as tmpdir:
             data = {"title": "Hello", "count": 42}
             csv_file.save(data, "header_test", output_dir=tmpdir)
-            
+
             csv_path = Path(tmpdir) / "header_test.csv"
             content = csv_path.read_text()
-            
+
             assert "title" in content
             assert "count" in content
 

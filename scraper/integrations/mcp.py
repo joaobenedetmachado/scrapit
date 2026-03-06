@@ -174,6 +174,42 @@ def create_server():
         result = scrape_directive(directive)
         return json.dumps(result, indent=2, default=str)
 
+    @mcp.tool()
+    def run_batch_tool(folder: str | None = None) -> str:
+        """
+        Run all Scrapit directives in a folder and return combined results.
+
+        Use this to scrape several pre-configured sites at once.
+        Each directive is a YAML file that describes how to scrape a specific site.
+
+        Args:
+            folder: Path to a folder containing YAML directives.
+                    Defaults to the built-in directives folder (wikipedia, hn, books, github_trending, etc.)
+
+        Returns:
+            JSON object mapping directive name to its scraped result (or error message).
+        """
+        import pathlib
+        from scraper.integrations import scrape_directive
+
+        if folder:
+            directives_dir = pathlib.Path(folder)
+        else:
+            directives_dir = pathlib.Path(__file__).resolve().parent.parent / "directives"
+
+        yamls = sorted(directives_dir.glob("*.yaml")) + sorted(directives_dir.glob("*.yml"))
+        if not yamls:
+            return json.dumps({"error": f"No YAML directives found in {directives_dir}"})
+
+        results = {}
+        for y in yamls:
+            try:
+                results[y.stem] = scrape_directive(str(y))
+            except Exception as e:
+                results[y.stem] = {"error": str(e)}
+
+        return json.dumps(results, indent=2, default=str)
+
     return mcp
 
 

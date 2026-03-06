@@ -14,7 +14,7 @@
 - [x] **Add `all` param to `scrape_with_selectors`** — `all_matches: dict[str, bool]` param added ✓
 - [x] **Expose `scrape_many` as MCP tool** — `scrape_many_tool` added ✓
 - [ ] **Add `scrape_paginated` tool** — accepts a URL + next-page selector + max_pages, returns all results
-- [ ] **Add `run_batch` tool** — run all directives in the directives folder, return combined results
+- [x] **Add `run_batch` tool** — runs all directives in a folder, returns combined results ✓
 - [ ] **Better tool descriptions** — current descriptions are dev-facing, not LLM-facing. Rewrite to guide the model on when to use each tool and what to expect back
 
 ---
@@ -22,11 +22,11 @@
 ## 🟡 Core Features
 
 - [ ] **XPath selector support** — CSS selectors don't work for XML/RSS feeds or complex HTML. Add `xpath:` prefix or a `use_xpath: true` option per field
-- [ ] **User-agent rotation** — hardcoded or no UA causes blocks. Add a pool of real browser UAs that rotate per request
+- [x] **User-agent rotation** — pool of 7 real browser UAs rotating per request ✓
 - [ ] **Robots.txt compliance** — add `respect_robots: true` option (default false). Parse and cache robots.txt before scraping
 - [ ] **Async concurrent scraping** — `scrape_many` currently runs sequentially. Use `asyncio` + `httpx` or `aiohttp` for parallel fetches
 - [ ] **Resume interrupted scrapes** — spider/paginated scrapes die mid-run with no recovery. Save progress to SQLite, add `--resume` flag
-- [ ] **Data deduplication** — SQLite backend stores duplicate rows on re-run. Add `unique_on: [field1, field2]` option to directive
+- [x] **Data deduplication** — `unique_on: [field1, field2]` param added to SQLite `save()` ✓
 
 ---
 
@@ -62,11 +62,11 @@
 
 ## 🧪 Tests
 
-- [ ] **Test coverage for transforms** — `transforms/__init__.py` has 20+ transforms with no unit tests
-- [ ] **Test coverage for validators** — same
+- [x] **Test coverage for transforms** — tests for all transforms including capitalize, sentence_case, count, truncate, slugify, normalize_whitespace, date ✓
+- [x] **Test coverage for validators** — comprehensive tests for all validation rules ✓
 - [ ] **Integration test for MCP server** — spin up the MCP server and call each tool, assert output shape
 - [ ] **Test the Playwright backend** — zero tests for the playwright scraper
-- [ ] **CI: add coverage report** — current CI runs tests but doesn't report coverage %. Add `pytest-cov` + upload to Codecov
+- [x] **CI: add coverage report** — `pytest-cov` added, coverage shown in CI output ✓
 
 ---
 

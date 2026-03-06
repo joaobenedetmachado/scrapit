@@ -1,1 +1,1 @@
-from scraper.storage import postgres as postgres_storage
+# Storage backends are imported on demand — no side-effects on package import.

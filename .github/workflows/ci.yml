@@ -27,7 +27,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install ruff pytest
+          pip install ruff pytest pytest-cov
 
       - name: Lint with ruff
         run: ruff check scraper/ --ignore E501,F401
@@ -67,4 +67,4 @@ jobs:
           "
 
       - name: Run pytest
-        run: pytest tests/ -v || echo "No tests found or tests failed"
+        run: pytest tests/ -v --cov=scraper --cov-report=term-missing

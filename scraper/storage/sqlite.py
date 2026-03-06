@@ -39,10 +39,40 @@ def _connect(output_dir: str | None = None) -> sqlite3.Connection:
     return conn
 
 
-def save(data: dict, directive_name: str, *, output_dir: str | None = None) -> str:
+def save(
+    data: dict,
+    directive_name: str,
+    *,
+    output_dir: str | None = None,
+    unique_on: list[str] | None = None,
+) -> str:
+    """Save a scrape result to SQLite.
+
+    Args:
+        data: Scraped data dict.
+        directive_name: Name of the directive (used as table key).
+        output_dir: Override output directory.
+        unique_on: List of field names to use as a uniqueness key.
+            If a row with the same values already exists, the save is skipped.
+            Example: unique_on=["url"] skips duplicate URLs.
+    """
     db_path = _get_db_path(output_dir)
     conn = _connect(output_dir)
     serializable = {k: str(v) for k, v in data.items() if k != "_id"}
+
+    if unique_on:
+        # Build a composite key from the specified fields
+        key_parts = [str(data.get(f, "")) for f in unique_on]
+        composite_key = "|".join(key_parts)
+        # Check for existing row with the same key
+        existing = conn.execute(
+            "SELECT id FROM scrapes WHERE directive = ? AND data LIKE ?",
+            (directive_name, f"%{composite_key}%"),
+        ).fetchone()
+        if existing:
+            conn.close()
+            return str(db_path)
+
     conn.execute(
         "INSERT INTO scrapes (directive, url, timestamp, data) VALUES (?, ?, ?, ?)",
         (

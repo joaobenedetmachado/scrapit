@@ -28,6 +28,38 @@ class TestStringTransforms:
         assert apply("hello world", ["title"]) == "Hello World"
 
 
+class TestCaseTransforms:
+    """Test capitalize, sentence_case, and count transforms."""
+
+    def test_capitalize(self):
+        assert apply("hello world", ["capitalize"]) == "Hello world"
+        assert apply("HELLO WORLD", ["capitalize"]) == "Hello world"
+
+    def test_capitalize_non_string(self):
+        assert apply(123, ["capitalize"]) == 123
+
+    def test_sentence_case(self):
+        assert apply("hello world", ["sentence_case"]) == "Hello world"
+        assert apply("HELLO WORLD", ["sentence_case"]) == "Hello world"
+
+    def test_sentence_case_empty(self):
+        assert apply("", ["sentence_case"]) == ""
+
+    def test_sentence_case_non_string(self):
+        assert apply(42, ["sentence_case"]) == 42
+
+    def test_count_string(self):
+        assert apply("hello", ["count"]) == 5
+        assert apply("", ["count"]) == 0
+
+    def test_count_list(self):
+        assert apply([1, 2, 3], ["count"]) == 3
+        assert apply([], ["count"]) == 0
+
+    def test_count_non_sequence(self):
+        assert apply(42, ["count"]) == 42
+
+
 class TestNumericTransforms:
     """Test numeric type conversion."""
 
@@ -359,6 +391,46 @@ class TestApplyAll:
         output = apply_all(result, spec)
         assert output["name"] == "JOHN"
         assert "age" not in output
+
+
+class TestAdvancedTransforms:
+    """Test truncate, slugify, normalize_whitespace, date transforms."""
+
+    def test_truncate_long_string(self):
+        result = apply("hello world foo bar", [{"truncate": 11}])
+        assert result == "hello world..."
+
+    def test_truncate_short_string(self):
+        assert apply("hi", [{"truncate": 10}]) == "hi"
+
+    def test_truncate_non_string(self):
+        assert apply(42, [{"truncate": 5}]) == 42
+
+    def test_slugify_basic(self):
+        assert apply("Hello World", ["slugify"]) == "hello-world"
+        assert apply("Python 3.10!", ["slugify"]) == "python-310"
+
+    def test_slugify_non_string(self):
+        assert apply(123, ["slugify"]) == 123
+
+    def test_normalize_whitespace(self):
+        assert apply("hello   world", ["normalize_whitespace"]) == "hello world"
+        assert apply("  a  b  c  ", ["normalize_whitespace"]) == "a b c"
+
+    def test_normalize_whitespace_non_string(self):
+        assert apply(42, ["normalize_whitespace"]) == 42
+
+    def test_date_iso(self):
+        assert apply("2024-03-05", ["date"]) == "2024-03-05"
+
+    def test_date_slash_format(self):
+        assert apply("05/03/2024", ["date"]) is not None
+
+    def test_date_none(self):
+        assert apply(None, ["date"]) is None
+
+    def test_date_invalid(self):
+        assert apply("not a date", ["date"]) is None
 
 
 class TestComplexScenarios:

@@ -19,6 +19,7 @@ Directive options consumed here:
     ttl: 3600                  — cache TTL in seconds (0 = disabled)
 """
 
+import random
 import time
 import requests
 from bs4 import BeautifulSoup
@@ -26,12 +27,24 @@ from datetime import datetime
 
 from scraper import cache as _cache
 
-_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-    )
-}
+_USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_3_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3.1 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3.1 Mobile/15E148 Safari/604.1",
+]
+
+_HEADERS = {"User-Agent": _USER_AGENTS[0]}
+
+
+def _random_headers(extra: dict | None = None) -> dict:
+    headers = {"User-Agent": random.choice(_USER_AGENTS)}
+    if extra:
+        headers.update(extra)
+    return headers
 
 
 # ── HTTP fetch ────────────────────────────────────────────────────────────────
@@ -72,7 +85,7 @@ def fetch_html(
     if cached is not None:
         return cached
 
-    merged_headers = {**_HEADERS, **(headers or {})}
+    merged_headers = _random_headers(headers)
     proxies = {"http": proxy, "https": proxy} if proxy else None
     last_exc = None
 
