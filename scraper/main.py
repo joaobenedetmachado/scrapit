@@ -395,6 +395,75 @@ scrape:{scrape_block}
     print(f"  3. Save results: python -m scraper.main scrape {name} --json")
 
 
+def cmd_diff(args):
+    """Compare two scrapit JSON output files and show added, removed, and changed records."""
+    import json as _json
+
+    def _load(p: str):
+        path = Path(p)
+        if not path.exists():
+            # Try output/ prefix
+            alt = _ROOT / "output" / (p if p.endswith(".json") else p + ".json")
+            if alt.exists():
+                path = alt
+            else:
+                print(f"error: file not found: {p}", file=sys.stderr)
+                sys.exit(1)
+        data = _json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, list) else [data]
+
+    old_records = _load(args.old)
+    new_records = _load(args.new)
+
+    skip = {"timestamp", "_id", "_valid", "_errors"}
+
+    def _flat(records):
+        """Return {key: record} using first non-skip field value as key, or index."""
+        key_field = args.key
+        if key_field:
+            return {str(r.get(key_field, i)): r for i, r in enumerate(records)}
+        return {str(i): r for i, r in enumerate(records)}
+
+    old_map = _flat(old_records)
+    new_map = _flat(new_records)
+
+    added = [k for k in new_map if k not in old_map]
+    removed = [k for k in old_map if k not in new_map]
+    changed = {}
+    for k in old_map:
+        if k not in new_map:
+            continue
+        o, n = old_map[k], new_map[k]
+        field_changes = {}
+        for field in set(o) | set(n):
+            if field in skip:
+                continue
+            if str(o.get(field)) != str(n.get(field)):
+                field_changes[field] = {"old": o.get(field), "new": n.get(field)}
+        if field_changes:
+            changed[k] = field_changes
+
+    print(f"diff: {args.old} → {args.new}\n")
+    print(f"  added:   {len(added)}")
+    print(f"  removed: {len(removed)}")
+    print(f"  changed: {len(changed)}")
+
+    if added and not args.summary:
+        print("\n++ added:")
+        for k in added:
+            print(f"  [{k}] {_json.dumps(new_map[k], default=str)[:120]}")
+    if removed and not args.summary:
+        print("\n-- removed:")
+        for k in removed:
+            print(f"  [{k}] {_json.dumps(old_map[k], default=str)[:120]}")
+    if changed and not args.summary:
+        print("\n~~ changed:")
+        for k, fields in changed.items():
+            print(f"  [{k}]")
+            for field, chg in fields.items():
+                print(f"    {field}: {chg['old']!r} → {chg['new']!r}")
+
+
 def cmd_validate(args):
     """Lint a directive YAML for missing required fields, unknown transforms, etc."""
     import yaml as _yaml
@@ -771,6 +840,13 @@ def main():
     p_ai.add_argument("--fields", help="Comma-separated fields to extract (e.g. title,price,rating)")
     p_ai.add_argument("--force", action="store_true", help="Overwrite existing directive without asking")
 
+    # ── diff ──────────────────────────────────────────────────────────────────
+    p_diff = sub.add_parser("diff", help="Compare two scrapit JSON output files")
+    p_diff.add_argument("old", help="Old output file (name or path)")
+    p_diff.add_argument("new", help="New output file (name or path)")
+    p_diff.add_argument("--key", default=None, help="Field to use as record key (e.g. url, id)")
+    p_diff.add_argument("--summary", action="store_true", help="Show counts only, no detail")
+
     # ── validate ──────────────────────────────────────────────────────────────
     p_validate = sub.add_parser("validate", help="Lint a directive YAML for errors and warnings")
     p_validate.add_argument("directive", help="Name or path of directive to validate")
@@ -790,6 +866,7 @@ def main():
         "list": cmd_list,
         "query": cmd_query,
         "cache": cmd_cache,
+        "diff": cmd_diff,
         "validate": cmd_validate,
         "doctor": cmd_doctor,
     }
