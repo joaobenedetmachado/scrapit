@@ -90,10 +90,7 @@ class TestNumericTransforms:
     def test_float_with_currency(self):
         """Remove currency symbols and convert."""
         assert apply("£ 12,99", ["float"]) == 12.99
-        # Note: float with comma as thousands separator fails - returns original
-        # This is a known limitation of the current implementation
-        result = apply("$ 1,234.56", ["float"])
-        assert result == "$ 1,234.56"  # Cannot parse, returns original
+        assert apply("$ 1,234.56", ["float"]) == 1234.56
 
     def test_float_with_comma_decimal(self):
         """Handle European decimal format (comma as decimal)."""
@@ -326,11 +323,12 @@ class TestTemplateTransform:
         assert result == "John: Smith"
 
     def test_template_multiple_fields(self):
-        """Replace multiple field placeholders."""
+        """Replace multiple field placeholders (current value = title)."""
         result = apply(
             "Developer",
             [{"template": "{name} is a {title} at {company}"}],
-            ctx={"name": "Alice", "company": "TechCorp"}
+            ctx={"name": "Alice", "company": "TechCorp"},
+            field="title"
         )
         assert result == "Alice is a Developer at TechCorp"
 
@@ -446,7 +444,7 @@ class TestComplexScenarios:
         spec = {
             "title": ["strip"],
             "price": ["float"],
-            "rating": [{"regex": r"\\d+\\.\\d+"}]
+            "rating": [{"regex": r"\d+\.\d+"}]
         }
         output = apply_all(result, spec)
         assert output["title"] == "AMAZING PRODUCT"
@@ -475,9 +473,9 @@ class TestComplexScenarios:
         assert output["content"] == "Hello World"
 
     def test_date_extraction(self):
-        """Extract date from text using regex."""
+        """Extract date from text using regex (new field from source)."""
         result = {"text": "Published on 2024-03-05"}
-        spec = {"date": [{"regex": r"\\d{4}-\\d{2}-\\d{2}"}]}
+        spec = {"date": {"from": "text", "transforms": [{"regex": r"\d{4}-\d{2}-\d{2}"}]}}
         output = apply_all(result, spec)
         assert output["date"] == "2024-03-05"
 

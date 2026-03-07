@@ -1,5 +1,4 @@
-"""
-Transform pipeline — apply declarative transforms to scraped field values.
+"""Transform pipeline — apply declarative transforms to scraped field values.
 
 Supported transforms (use in directive under `transform:`):
   strip            — strip whitespace
@@ -21,6 +20,8 @@ Supported transforms (use in directive under `transform:`):
   date             — parse date string to ISO format (YYYY-MM-DD)
   parse_date       — parse date with custom format
 """
+
+from __future__ import annotations
 
 import re
 from datetime import datetime
@@ -85,12 +86,34 @@ def _int(value, _, **__):
         return value
 
 
+def _normalize_number_string(s: str) -> str:
+    """Remove currency/space, then normalize decimal: one comma or dot as decimal."""
+    s = re.sub(r"[^\d.,\-]", "", s)
+    if not s:
+        return s
+    # Both comma and dot: last one is decimal separator
+    if "," in s and "." in s:
+        last_comma, last_dot = s.rfind(","), s.rfind(".")
+        if last_dot > last_comma:
+            s = s.replace(",", "")
+        else:
+            s = s.replace(".", "").replace(",", ".")
+        return s
+    # Only comma: if ,XX (2 digits after) treat as decimal; else thousands
+    if "," in s:
+        if re.search(r",\d{2}$", s):
+            s = s.replace(",", ".")
+        else:
+            s = s.replace(",", "")
+    return s
+
+
 @_t("float")
 def _float(value, _, **__):
     if value is None:
         return None
     try:
-        cleaned = re.sub(r"[^\d\.\,\-]", "", str(value)).replace(",", ".")
+        cleaned = _normalize_number_string(str(value))
         return float(cleaned)
     except ValueError:
         return value
@@ -129,17 +152,21 @@ def _replace(value, args, **__):
 
 
 @_t("split")
-def _split(value, sep=",", **__):
+def _split(value, sep=None, **__):
     if not isinstance(value, str):
         return value
+    if sep is None:
+        sep = ","
     return [v.strip() for v in value.split(str(sep)) if v.strip()]
 
 
 @_t("join")
-def _join(value, sep=", ", **__):
-    if isinstance(value, list):
-        return str(sep).join(str(v) for v in value)
-    return value
+def _join(value, sep=None, **__):
+    if not isinstance(value, list):
+        return value
+    if sep is None:
+        sep = ", "
+    return str(sep).join(str(v) for v in value)
 
 
 @_t("first")
@@ -193,7 +220,8 @@ def _append(value, suffix, **__):
 def _remove_tags(value, _, **__):
     if not isinstance(value, str):
         return value
-    return re.sub(r"<[^>]+>", " ", value).strip()
+    without_tags = re.sub(r"<[^>]+>", " ", value)
+    return re.sub(r"\s+", " ", without_tags).strip()
 
 
 @_t("normalize_whitespace")
@@ -210,13 +238,13 @@ def _truncate(value, length, **__):
     max_length = int(length)
     if len(value) <= max_length:
         return value
-    # Truncate at max_length and avoid breaking words
     truncated = value[:max_length]
-    # Find last space and truncate there
-    last_space = truncated.rfind(" ")
-    if last_space > 0:
-        truncated = truncated[:last_space]
-    return truncated + "..."
+    # Trim to last word boundary only if next char exists and is not space (cutting a word)
+    if max_length < len(value) and value[max_length] not in (" ", ""):
+        last_space = truncated.rfind(" ")
+        if last_space > 0:
+            truncated = truncated[:last_space]
+    return truncated.rstrip() + "..."
 
 
 @_t("slugify")
@@ -234,14 +262,17 @@ def _slugify(value, _, **__):
 
 
 @_t("template")
-def _template(value, pattern, ctx=None, **__):
+def _template(value, pattern, ctx=None, field=None, **__):
     """Replace {value} with the field value and {field} with other fields."""
     if not isinstance(pattern, str):
         return value
+    if ctx is not None and field is not None:
+        ctx = {**ctx, field: value}
+    elif ctx is None:
+        ctx = {}
     result = str(pattern).replace("{value}", str(value) if value is not None else "")
-    if ctx:
-        for k, v in ctx.items():
-            result = result.replace(f"{{{k}}}", str(v) if v is not None else "")
+    for k, v in ctx.items():
+        result = result.replace(f"{{{k}}}", str(v) if v is not None else "")
     return result
 
 
@@ -348,7 +379,7 @@ def _parse_date(value, args, **__):
     return None
 
 
-def apply(value: Any, transforms: list, ctx: dict | None = None) -> Any:
+def apply(value: Any, transforms: list, ctx: dict | None = None, field: str | None = None) -> Any:
     """Apply a list of transforms to a single value."""
     for t in transforms:
         if isinstance(t, str):
@@ -359,14 +390,21 @@ def apply(value: Any, transforms: list, ctx: dict | None = None) -> Any:
             continue
         fn = _REGISTRY.get(name)
         if fn:
-            value = fn(value, arg, ctx=ctx)
+            value = fn(value, arg, ctx=ctx, field=field)
     return value
 
 
 def apply_all(result: dict, transform_spec: dict) -> dict:
-    """Apply per-field transforms to an entire scraped result."""
+    """Apply per-field transforms to an entire scraped result.
+    If a spec value is dict with 'from' and 'transforms', create field from source.
+    """
     out = dict(result)
-    for field, transforms in transform_spec.items():
-        if field in out:
-            out[field] = apply(out[field], transforms, ctx=out)
+    for field_name, spec in transform_spec.items():
+        if isinstance(spec, dict) and "from" in spec:
+            source = spec["from"]
+            transforms = spec.get("transforms", [])
+            if source in out:
+                out[field_name] = apply(out[source], transforms, ctx=out, field=field_name)
+        elif field_name in out:
+            out[field_name] = apply(out[field_name], spec, ctx=out, field=field_name)
     return out
