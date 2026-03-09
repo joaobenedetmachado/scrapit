@@ -9,6 +9,7 @@ Directive format:
     max: 50                — maximum pages to scrape (default: 50)
     same_domain: true      — restrict to same domain as `site` (default: true)
     depth: 1               — link-following depth from index (default: 1)
+    incremental: true      — skip URLs visited in previous runs (persistent state)
 
 The spider starts at `site`, discovers links matching `selector`,
 then scrapes each discovered URL with the same `scrape` spec.
@@ -23,6 +24,7 @@ from scraper.scrapers.bs4_scraper import fetch_html, parse_page
 from scraper.logger import log
 
 _CHECKPOINTS_DIR = Path("output") / ".checkpoints"
+_STATE_DIR        = Path("output") / ".scrapit_state"
 
 
 class Spider:
@@ -36,6 +38,7 @@ class Spider:
         self.attr = self.follow.get("attr", "href")
         self.base_domain = urlparse(dados["site"]).netloc
         self._resume = resume
+        self._incremental = self.follow.get("incremental", False)
 
         cache_cfg = dados.get("cache", {})
         self._fetch_kw = dict(
@@ -62,6 +65,28 @@ class Spider:
                 pass
         return set()
 
+    def _state_path(self, directive_name: str) -> Path:
+        _STATE_DIR.mkdir(parents=True, exist_ok=True)
+        return _STATE_DIR / f"{directive_name}.json"
+
+    def _load_state(self, directive_name: str) -> set[str]:
+        path = self._state_path(directive_name)
+        if path.exists():
+            try:
+                return set(json.loads(path.read_text()).get("visited", []))
+            except Exception:
+                pass
+        return set()
+
+    def _save_state(self, directive_name: str, visited: set[str]):
+        path = self._state_path(directive_name)
+        path.write_text(json.dumps({"visited": sorted(visited)}, indent=2))
+
+    def reset_state(self, directive_name: str):
+        path = self._state_path(directive_name)
+        if path.exists():
+            path.unlink()
+
     def _save_checkpoint(self, directive_name: str, discovered: list[str], completed: set[str]):
         cp_file = self._checkpoint_path(directive_name)
         cp_file.write_text(json.dumps(
@@ -72,10 +97,17 @@ class Spider:
     def run(self, directive_name: str = "spider") -> list[dict]:
         """Discover and scrape all linked pages. Returns list of result dicts."""
         completed: set[str] = set()
+        visited: set[str] = set()
+
         if self._resume:
             completed = self._load_checkpoint(directive_name)
             if completed:
                 log(f"spider: resuming — skipping {len(completed)} already-scraped URLs")
+
+        if self._incremental:
+            visited = self._load_state(directive_name)
+            if visited:
+                log(f"spider: incremental — skipping {len(visited)} previously visited URLs")
 
         index_html = fetch_html(self.dados["site"], **self._fetch_kw)
         index_soup = BeautifulSoup(index_html, "html.parser")
@@ -88,6 +120,8 @@ class Spider:
         for url in discovered[: self.max]:
             if url in completed:
                 continue
+            if self._incremental and url in visited:
+                continue
             try:
                 html = fetch_html(url, **self._fetch_kw)
                 soup = BeautifulSoup(html, "html.parser")
@@ -95,12 +129,17 @@ class Spider:
                 result["_source"] = self.dados["site"]
                 results.append(result)
                 completed.add(url)
+                visited.add(url)
                 self._save_checkpoint(directive_name, discovered, completed)
                 log(f"spider: scraped {url}")
             except Exception as e:
                 log(f"spider: error scraping {url}: {e}", "warning")
 
-        # Clear checkpoint on successful completion
+        # Persist incremental state (survives across runs)
+        if self._incremental:
+            self._save_state(directive_name, visited)
+
+        # Clear crash-recovery checkpoint on successful completion
         cp = self._checkpoint_path(directive_name)
         if cp.exists():
             cp.unlink()

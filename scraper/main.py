@@ -148,6 +148,13 @@ def _run_one(
 
 def cmd_scrape(args):
     path = _resolve(args.directive)
+
+    if getattr(args, 'reset_state', False):
+        from scraper.scrapers.spider import Spider
+        Spider({}, resume=False).reset_state(path.stem)
+        print(f"incremental state cleared for '{path.stem}'")
+        return
+
     dest = _dest(args)
     output_dir = getattr(args, 'output_dir', None)
     compact = getattr(args, 'format', 'pretty') == 'compact'
@@ -443,25 +450,26 @@ def cmd_diff(args):
         if field_changes:
             changed[k] = field_changes
 
-    print(f"diff: {args.old} → {args.new}\n")
-    print(f"  added:   {len(added)}")
-    print(f"  removed: {len(removed)}")
-    print(f"  changed: {len(changed)}")
+    from scraper.colors import green, red, yellow, bold, dim
+    print(f"diff: {bold(args.old)} → {bold(args.new)}\n")
+    print(f"  {green('added:   ' + str(len(added)))}")
+    print(f"  {red('removed: ' + str(len(removed)))}")
+    print(f"  {yellow('changed: ' + str(len(changed)))}")
 
     if added and not args.summary:
-        print("\n++ added:")
+        print(f"\n{green('++ added:')}")
         for k in added:
-            print(f"  [{k}] {_json.dumps(new_map[k], default=str)[:120]}")
+            print(f"  [{k}] {dim(_json.dumps(new_map[k], default=str)[:120])}")
     if removed and not args.summary:
-        print("\n-- removed:")
+        print(f"\n{red('-- removed:')}")
         for k in removed:
-            print(f"  [{k}] {_json.dumps(old_map[k], default=str)[:120]}")
+            print(f"  [{k}] {dim(_json.dumps(old_map[k], default=str)[:120])}")
     if changed and not args.summary:
-        print("\n~~ changed:")
+        print(f"\n{yellow('~~ changed:')}")
         for k, fields in changed.items():
             print(f"  [{k}]")
             for field, chg in fields.items():
-                print(f"    {field}: {chg['old']!r} → {chg['new']!r}")
+                print(f"    {field}: {red(repr(chg['old']))} → {green(repr(chg['new']))}")
 
 
 def cmd_validate(args):
@@ -501,13 +509,14 @@ def cmd_validate(args):
     if paginate and not paginate.get("next"):
         warnings.append("'paginate' block is missing 'next' selector")
 
-    print(f"validating: {path.name}\n")
+    from scraper.colors import green, red, yellow, bold
+    print(f"validating: {bold(path.name)}\n")
     if not errors and not warnings:
-        print("  ✓ directive looks good")
+        print(f"  {green('✓')} directive looks good")
     for e in errors:
-        print(f"  ✗ error: {e}")
+        print(f"  {red('✗')} {red('error:')} {e}")
     for w in warnings:
-        print(f"  ⚠ warning: {w}")
+        print(f"  {yellow('⚠')} {yellow('warning:')} {w}")
 
     if errors:
         sys.exit(1)
@@ -776,6 +785,7 @@ def _add_output_args(p):
     p.add_argument("--preview", action="store_true", help="Print only, do not save")
     p.add_argument("--diff", action="store_true", help="Diff against previous JSON output")
     p.add_argument("--resume", action="store_true", help="Resume interrupted spider/paginated scrape from checkpoint")
+    p.add_argument("--reset-state", action="store_true", dest="reset_state", help="Clear incremental spider state for this directive")
     p.add_argument("--quiet", "-q", action="store_true", help="Suppress run summary output")
     p.add_argument("--timeout", type=int, default=None, metavar="SECONDS",
                    help="Per-request timeout in seconds (overrides directive setting)")
