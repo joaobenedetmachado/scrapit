@@ -218,7 +218,10 @@ async def _dispatch(dados: dict, stats: ScrapeStats, directive_name: str, resume
         return results
 
     # ── Single URL ────────────────────────────────────────────────────────────
-    if use in ("beautifulsoup", "bs4"):
+    if use == "graphql":
+        from scraper.scrapers.graphql_scraper import scrape as gql_scrape
+        return [gql_scrape(dados)]
+    elif use in ("beautifulsoup", "bs4"):
         return [bs4_scraper.scrape(dados)]
     elif use == "httpx":
         from scraper.scrapers.httpx_scraper import scrape as httpx_scrape
