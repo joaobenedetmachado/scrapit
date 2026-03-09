@@ -241,18 +241,37 @@ def scrape(dados: dict) -> dict:
         if not _is_allowed_by_robots(dados["site"]):
             raise PermissionError(f"robots.txt disallows scraping: {dados['site']}")
 
+    # Proxy pool rotation
+    from scraper.proxy import from_directive
+    pool = from_directive(dados)
+    proxy = pool.next() if pool else dados.get("proxy")
+
     cache_cfg = dados.get("cache", {})
     cache_ttl = cache_cfg.get("ttl", 0) if isinstance(cache_cfg, dict) else 0
 
-    html = fetch_html(
-        dados["site"],
-        retries=dados.get("retries", 3),
-        timeout=dados.get("timeout", 15),
-        headers=dados.get("headers"),
-        cookies=dados.get("cookies"),
-        proxy=dados.get("proxy"),
-        cache_ttl=cache_ttl,
-        delay=dados.get("delay", 0),
-    )
+    retries = dados.get("retries", 3)
+    n = max(retries, len(pool._proxies) if pool else 1)
+    last_exc = None
+    html = None
+    for attempt in range(n):
+        try:
+            html = fetch_html(
+                dados["site"],
+                retries=1,
+                timeout=dados.get("timeout", 15),
+                headers=dados.get("headers"),
+                cookies=dados.get("cookies"),
+                proxy=proxy,
+                cache_ttl=cache_ttl,
+                delay=dados.get("delay", 0) if attempt == 0 else 0,
+            )
+            break
+        except Exception as e:
+            last_exc = e
+            if pool:
+                pool.mark_failed(proxy)
+                proxy = pool.next()
+            if attempt == n - 1:
+                raise last_exc
     soup = BeautifulSoup(html, "html.parser")
     return parse_page(soup, dados["site"], dados["scrape"], raw_html=html)
