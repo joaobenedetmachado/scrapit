@@ -15,6 +15,8 @@ from pathlib import Path
 from datetime import datetime
 
 from scraper.config import OUTPUT_DIR
+from pathlib import Path as _Path
+_DIRECTIVES_DIR = _Path(__file__).resolve().parent / "directives"
 
 try:
     from fastapi import FastAPI, HTTPException
@@ -42,21 +44,20 @@ def _load_json(name: str) -> list[dict]:
 
 
 def _list_directives() -> list[dict]:
-    if not OUTPUT_DIR.exists():
-        return []
     out = []
-    for p in sorted(OUTPUT_DIR.glob("*.json")):
-        if p.stem.endswith(".diff"):
-            continue
-        try:
-            data = json.loads(p.read_text(encoding="utf-8"))
-            records = data if isinstance(data, list) else [data]
-            count = len(records)
-        except Exception:
-            count = 0
-        mtime = datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
-        has_diff = (OUTPUT_DIR / f"{p.stem}.diff.json").exists()
-        out.append({"name": p.stem, "count": count, "last_run": mtime, "has_diff": has_diff})
+    for p in sorted(_DIRECTIVES_DIR.glob("*.yaml")):
+        name = p.stem
+        output_file = OUTPUT_DIR / f"{name}.json"
+        count, last_run = 0, "—"
+        if output_file.exists():
+            try:
+                data = json.loads(output_file.read_text(encoding="utf-8"))
+                count = len(data) if isinstance(data, list) else 1
+            except Exception:
+                pass
+            last_run = datetime.fromtimestamp(output_file.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+        has_diff = (OUTPUT_DIR / f"{name}.diff.json").exists()
+        out.append({"name": name, "count": count, "last_run": last_run, "has_diff": has_diff})
     return out
 
 
