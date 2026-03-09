@@ -59,6 +59,7 @@ def fetch_html(
     cookies: dict | None = None,
     proxy: str | None = None,
     cache_ttl: int = 0,
+    cache_cfg: dict | None = None,
     delay: float = 0,
 ) -> str:
     """Fetch URL and return HTML string. Caches if cache_ttl > 0.
@@ -81,7 +82,7 @@ def fetch_html(
     if delay > 0:
         time.sleep(delay)
     
-    cached = _cache.get(url, cache_ttl)
+    cached = _cache.get(url, cache_ttl, cache_cfg=cache_cfg)
     if cached is not None:
         return cached
 
@@ -101,7 +102,7 @@ def fetch_html(
             resp.raise_for_status()
             html = resp.text
             if cache_ttl > 0:
-                _cache.put(url, html)
+                _cache.put(url, html, ttl=cache_ttl, cache_cfg=cache_cfg)
             return html
         except requests.RequestException as e:
             last_exc = e
@@ -246,7 +247,7 @@ def scrape(dados: dict) -> dict:
     pool = from_directive(dados)
     proxy = pool.next() if pool else dados.get("proxy")
 
-    cache_cfg = dados.get("cache", {})
+    cache_cfg = dados.get("cache", {}) or {}
     cache_ttl = cache_cfg.get("ttl", 0) if isinstance(cache_cfg, dict) else 0
 
     retries = dados.get("retries", 3)
@@ -263,6 +264,7 @@ def scrape(dados: dict) -> dict:
                 cookies=dados.get("cookies"),
                 proxy=proxy,
                 cache_ttl=cache_ttl,
+                cache_cfg=cache_cfg,
                 delay=dados.get("delay", 0) if attempt == 0 else 0,
             )
             break

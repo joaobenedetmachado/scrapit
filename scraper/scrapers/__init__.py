@@ -101,7 +101,7 @@ def _interpolate_env(obj):
     return obj
 
 
-async def grab_elements_by_directive(path: str, resume: bool = False, timeout: int | None = None) -> dict | list[dict]:
+async def grab_elements_by_directive(path: str, resume: bool = False, timeout: int | None = None, on_result=None) -> dict | list[dict]:
     """
     Main entry point. Returns a single dict for simple scrapes,
     or a list of dicts for paginated / spider / multi-site scrapes.
@@ -126,7 +126,7 @@ async def grab_elements_by_directive(path: str, resume: bool = False, timeout: i
     hooks.fire("before_scrape", dados)
 
     try:
-        results = await _dispatch(dados, stats, directive_name, resume=resume)
+        results = await _dispatch(dados, stats, directive_name, resume=resume, on_result=on_result)
     except Exception as e:
         stats.errors.append(str(e))
         hooks.fire("on_error", e, dados)
@@ -161,7 +161,7 @@ async def grab_elements_by_directive(path: str, resume: bool = False, timeout: i
     return results[0] if len(results) == 1 else results
 
 
-async def _dispatch(dados: dict, stats: ScrapeStats, directive_name: str, resume: bool = False) -> list[dict]:
+async def _dispatch(dados: dict, stats: ScrapeStats, directive_name: str, resume: bool = False, on_result=None) -> list[dict]:
     from scraper.scrapers import bs4_scraper, playwright_scraper
     from scraper.scrapers.paginator import paginate
     from scraper.scrapers.spider import Spider
@@ -204,7 +204,7 @@ async def _dispatch(dados: dict, stats: ScrapeStats, directive_name: str, resume
         if use not in ("beautifulsoup", "bs4"):
             raise ValueError("Spider mode only supports 'beautifulsoup' backend.")
         spider = Spider(dados, resume=resume)
-        results = spider.run(directive_name=directive_name)
+        results = spider.run(directive_name=directive_name, on_result=on_result)
         stats.urls_scraped = len(results)
         return results
 
