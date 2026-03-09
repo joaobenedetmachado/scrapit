@@ -276,14 +276,14 @@ async function loadDirectives() {
     const item = document.createElement('div');
     item.className = 'directive-item';
     item.dataset.name = d.name;
-    item.innerHTML = \`
+    item.innerHTML = `
       <div style="flex:1;overflow:hidden">
-        <div class="d-name">\${d.name}</div>
-        <div class="d-meta">\${d.last_run}</div>
+        <div class="d-name">${d.name}</div>
+        <div class="d-meta">${d.last_run}</div>
       </div>
-      \${d.has_diff ? '<div class="diff-dot" title="has diff"></div>' : ''}
-      <span class="d-badge">\${d.count}</span>
-    \`;
+      ${d.has_diff ? '<div class="diff-dot" title="has diff"></div>' : ''}
+      <span class="d-badge">${d.count}</span>
+    `;
     item.addEventListener('click', () => selectDirective(d.name));
     el.appendChild(item);
   });
@@ -305,7 +305,7 @@ async function selectDirective(name) {
 }
 
 async function renderResults(name, page) {
-  const res  = await fetch(\`/api/results/\${name}?page=\${page}&per_page=25\`);
+  const res  = await fetch(`/api/results/${name}?page=${page}&per_page=25`);
   if (!res.ok) { $('content').innerHTML = '<div class="empty"><h3>Error loading results</h3></div>'; return; }
   const data = await res.json();
   _page  = data.page;
@@ -329,25 +329,25 @@ async function renderResults(name, page) {
       const v = r[k];
       if (v === null || v === undefined) return '<td class="null">null</td>';
       const s = String(v);
-      return \`<td title="\${escHtml(s)}">\${escHtml(s.length > 80 ? s.slice(0,80)+'…' : s)}</td>\`;
+      return `<td title="${escHtml(s)}">${escHtml(s.length > 80 ? s.slice(0,80)+'…' : s)}</td>`;
     }).join('');
     return '<tr>' + cells + '</tr>';
   }).join('');
-  wrap.innerHTML = \`<table>
-    <thead><tr>\${keys.map(k => \`<th>\${escHtml(k)}</th>\`).join('')}</tr></thead>
-    <tbody>\${rows}</tbody>
-  </table>\`;
+  wrap.innerHTML = `<table>
+    <thead><tr>${keys.map(k => `<th>${escHtml(k)}</th>`).join('')}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
   content.appendChild(wrap);
 
   // Pagination
   if (data.pages > 1) {
     const pag = document.createElement('div');
     pag.className = 'pagination';
-    pag.innerHTML = \`
-      <button class="btn" onclick="changePage(\${_page-1})" \${_page<=1?'disabled':''}>← Prev</button>
-      <span>Page \${_page} of \${_pages} &nbsp;·&nbsp; \${data.total} records</span>
-      <button class="btn" onclick="changePage(\${_page+1})" \${_page>=_pages?'disabled':''}>Next →</button>
-    \`;
+    pag.innerHTML = `
+      <button class="btn" onclick="changePage(${_page-1})" ${_page<=1?'disabled':''}>← Prev</button>
+      <span>Page ${_page} of ${_pages} &nbsp;·&nbsp; ${data.total} records</span>
+      <button class="btn" onclick="changePage(${_page+1})" ${_page>=_pages?'disabled':''}>Next →</button>
+    `;
     content.appendChild(pag);
   }
 
@@ -360,14 +360,14 @@ async function renderResults(name, page) {
         const panel = document.createElement('div');
         panel.className = 'diff-panel';
         const frows = Object.entries(diff.fields).map(([f, v]) =>
-          \`<tr><td class="field">\${escHtml(f)}</td><td class="old">\${escHtml(String(v.old))}</td><td class="new">\${escHtml(String(v.new))}</td></tr>\`
+          `<tr><td class="field">${escHtml(f)}</td><td class="old">${escHtml(String(v.old))}</td><td class="new">${escHtml(String(v.new))}</td></tr>`
         ).join('');
-        panel.innerHTML = \`
-          <div class="diff-panel-header">⚡ Changes detected &nbsp;<span style="font-weight:400;color:var(--muted)">\${diff.timestamp || ''}</span></div>
+        panel.innerHTML = `
+          <div class="diff-panel-header">⚡ Changes detected &nbsp;<span style="font-weight:400;color:var(--muted)">${diff.timestamp || ''}</span></div>
           <table class="diff-table">
             <thead><tr><th>Field</th><th>Old value</th><th>New value</th></tr></thead>
-            <tbody>\${frows}</tbody>
-          </table>\`;
+            <tbody>${frows}</tbody>
+          </table>`;
         content.appendChild(panel);
       }
     }
