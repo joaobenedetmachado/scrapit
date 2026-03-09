@@ -191,7 +191,13 @@ def parse_page(soup: BeautifulSoup, url: str, scrape_spec: dict, raw_html: str =
                 break
 
         if element is None:
-            result[key] = [] if get_all else None
+            on_missing = options.get("on_missing")
+            if on_missing == "skip":
+                continue
+            elif on_missing not in (None, "null"):
+                result[key] = on_missing  # use as default value
+            else:
+                result[key] = [] if get_all else None
             continue
 
         if get_all:

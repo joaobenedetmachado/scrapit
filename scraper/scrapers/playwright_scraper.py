@@ -101,7 +101,13 @@ async def scrape(dados: dict, directive_name: str = "") -> dict:
                     pass
 
             if locator is None or await locator.count() == 0:
-                result[key] = [] if get_all else None
+                on_missing = options.get("on_missing")
+                if on_missing == "skip":
+                    continue
+                elif on_missing not in (None, "null"):
+                    result[key] = on_missing
+                else:
+                    result[key] = [] if get_all else None
                 continue
 
             if get_all:
