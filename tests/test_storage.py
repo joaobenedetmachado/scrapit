@@ -167,6 +167,14 @@ class TestSQLiteStorage:
             assert "idx_url" in indexes
 
 
+try:
+    import openpyxl as _openpyxl
+    _HAS_OPENPYXL = True
+except ImportError:
+    _HAS_OPENPYXL = False
+
+
+@pytest.mark.skipif(not _HAS_OPENPYXL, reason="openpyxl not installed")
 class TestExcelStorage:
     """Tests for Excel storage backend."""
 
@@ -221,6 +229,7 @@ class TestExcelStorage:
             assert "c" in headers
 
 
+@pytest.mark.skipif(not _HAS_OPENPYXL, reason="openpyxl not installed")
 class TestStorageIntegration:
     """Integration tests for storage backends."""
 
@@ -246,4 +255,15 @@ class TestStorageIntegration:
             
             # SQLite should also work (with its own db file)
             sqlite.save(test_data.copy(), "integration", output_dir=tmpdir)
+            assert (Path(tmpdir) / "scrapit.db").exists()
+
+    def test_csv_json_sqlite_without_optional_deps(self):
+        """CSV, JSON, SQLite work without optional dependencies."""
+        data = {"url": "https://example.com", "title": "Test"}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_file.save(data.copy(), "nodeps", output_dir=tmpdir)
+            json_file.save(data.copy(), "nodeps", output_dir=tmpdir)
+            sqlite.save(data.copy(), "nodeps", output_dir=tmpdir)
+            assert (Path(tmpdir) / "nodeps.csv").exists()
+            assert (Path(tmpdir) / "nodeps.json").exists()
             assert (Path(tmpdir) / "scrapit.db").exists()
