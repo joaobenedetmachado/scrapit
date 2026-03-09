@@ -68,10 +68,16 @@ def _save(result: dict | list, name: str, dest: str, *, output_dir: str | None =
         elif dest == "postgres":
             postgres_storage.save(item, name)
             print(f"→ saved {len(items)} record(s) to PostgreSQL.")
+        elif dest == "parquet":
+            break  # handled below (whole list at once)
         else:
             # json: save list or single dict
             break
-    if dest == "json":
+    if dest == "parquet":
+        from scraper.storage import parquet_file
+        out = parquet_file.save(items, name, output_dir=output_dir)
+        print(f"→ saved {len(items)} record(s) to: {out}")
+    elif dest == "json":
         out = json_file.save(result, name, output_dir=output_dir, compact=compact)
         print(f"→ saved: {out}")
     elif dest == "mongo":
@@ -778,8 +784,10 @@ def _dest(args) -> str:
         return "excel"
     if getattr(args, "sheets", False):
         return "sheets"
-    if getattr(args, "postgres", False):   
-        return "postgres"    
+    if getattr(args, "postgres", False):
+        return "postgres"
+    if getattr(args, "parquet", False):
+        return "parquet"
     return "json"
 
 
@@ -791,7 +799,8 @@ def _add_output_args(p):
     group.add_argument("--sqlite", action="store_true", help="Save to output/scrapit.db")
     group.add_argument("--excel", action="store_true", help="Append to output/<name>.xlsx")
     group.add_argument("--sheets", action="store_true", help="Append to Google Sheets")
-    group.add_argument("--postgres", action="store_true", help="Save to PostgreSQL")  
+    group.add_argument("--postgres", action="store_true", help="Save to PostgreSQL")
+    group.add_argument("--parquet", action="store_true", help="Save to output/<name>.parquet")
     p.add_argument("--output-dir", help="Custom output directory (overrides default 'output/')")
     p.add_argument("--format", choices=["pretty", "compact"], default="pretty",
                    help="JSON output format: pretty (indented, default) or compact (minified)")

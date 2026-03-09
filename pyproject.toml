@@ -49,6 +49,9 @@ playwright = ["playwright>=1.40"]
 # pip install scrapit[httpx]
 httpx = ["httpx>=0.27"]
 
+# pip install scrapit[parquet]
+parquet = ["pyarrow>=15.0"]
+
 # pip install scrapit[excel]
 excel = ["openpyxl>=3.1"]
 
