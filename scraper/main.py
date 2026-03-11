@@ -143,6 +143,24 @@ def _run_one(
     # Pretty-print to console
     print(json.dumps(result, indent=2, default=str))
 
+    # Print validation summary if _valid key is present
+    items = result if isinstance(result, list) else [result]
+    if items and "_valid" in items[0]:
+        def green(text): return f"\033[92m{text}\033[0m"
+        def red(text): return f"\033[91m{text}\033[0m"
+        print(f"\n{green('✓') if preview else ''} validation summary:")
+        for i, item in enumerate(items, 1):
+            is_valid = item.get("_valid")
+            identifier = str(item.get("title") or item.get("name") or item.get("url") or f"record {i}")
+            if len(identifier) > 40:
+                identifier = identifier[:37] + "..."
+            
+            if is_valid:
+                print(f"  {green('✓')} valid   {identifier}")
+            else:
+                errs = ", ".join(item.get("_errors", ["unknown error"]))
+                print(f"  {red('✗')} invalid {identifier}: {errs}")
+
     # Change detection
     if detect_changes:
         previous = load_previous(name)
