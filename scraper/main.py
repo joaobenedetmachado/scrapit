@@ -237,6 +237,9 @@ def cmd_batch(args):
         sys.exit(1)
 
     yamls = sorted(folder.glob("*.yaml")) + sorted(folder.glob("*.yml"))
+    if getattr(args, 'limit', None) is not None:
+        yamls = yamls[:args.limit]
+        
     if not yamls:
         print(f"no YAML directives found in {folder}")
         sys.exit(1)
@@ -1013,6 +1016,7 @@ def main():
         "folder", nargs="?", default=str(_DIRECTIVES_DIR),
         help="Folder with YAML directives (default: scraper/directives/)"
     )
+    p_batch.add_argument("--limit", type=int, default=None, help="Run only the first N directives alphabetically")
     _add_output_args(p_batch)
 
     # ── list ──────────────────────────────────────────────────────────────────
