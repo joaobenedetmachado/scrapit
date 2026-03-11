@@ -564,6 +564,22 @@ def cmd_diff(args):
             for field, chg in fields.items():
                 print(f"    {field}: {red(repr(chg['old']))} → {green(repr(chg['new']))}")
 
+    if args.output:
+        output_data = {
+            "added": len(added),
+            "removed": len(removed),
+            "changed": len(changed),
+            "records": {
+                "added": {k: new_map[k] for k in added},
+                "removed": {k: old_map[k] for k in removed},
+                "changed": changed
+            }
+        }
+        out_path = Path(args.output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(_json.dumps(output_data, indent=2, default=str), encoding="utf-8")
+        print(f"\nDiff result saved to {out_path}")
+
 
 def cmd_validate(args):
     """Lint a directive YAML for missing required fields, unknown transforms, etc."""
@@ -1118,6 +1134,7 @@ def main():
     p_diff.add_argument("new", help="New output file (name or path)")
     p_diff.add_argument("--key", default=None, help="Field to use as record key (e.g. url, id)")
     p_diff.add_argument("--summary", action="store_true", help="Show counts only, no detail")
+    p_diff.add_argument("--output", "-o", help="File to save the diff result as JSON")
 
     # ── validate ──────────────────────────────────────────────────────────────
     p_validate = sub.add_parser("validate", help="Lint a directive YAML for errors and warnings")
