@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import urllib.parse
 from datetime import datetime
 from typing import Any
 
@@ -291,22 +292,35 @@ def _normalize_whitespace(value, _, **__):
 
 
 @_t("truncate")
-def _truncate(value, length, **__):
-    """Truncate string to *length* characters, appending '...'.
+def _truncate(value, arg, **__):
+    """Truncate string to length characters, appending ellipsis.
 
+    Arg can be:
+      - int/str: the max length (uses '...' as default ellipsis)
+      - dict: {length: int, ellipsis: str}
+    
     Breaks at the last word boundary so words are not split.
     """
     if not isinstance(value, str):
         return value
-    max_length = int(length)
+    
+    if isinstance(arg, dict):
+        max_length = int(arg.get("length", 0))
+        ellipsis = str(arg.get("ellipsis", "..."))
+    else:
+        max_length = int(arg)
+        ellipsis = "..."
+
     if len(value) <= max_length:
         return value
+    
     truncated = value[:max_length]
     if max_length < len(value) and value[max_length] not in (" ", ""):
         last_space = truncated.rfind(" ")
         if last_space > 0:
             truncated = truncated[:last_space]
-    return truncated.rstrip() + "..."
+    
+    return truncated.rstrip() + ellipsis
 
 
 @_t("slugify")
@@ -377,6 +391,22 @@ def _hash(value, algorithm, **__):
     return hashlib.new(algo, value.encode()).hexdigest()
 
 
+@_t("url_encode")
+def _url_encode(value, _, **__):
+    """Percent-encode special characters in a URL string."""
+    if not isinstance(value, str):
+        return value
+    return urllib.parse.quote(value)
+
+
+@_t("url_decode")
+def _url_decode(value, _, **__):
+    """Decode percent-encoded characters in a URL string."""
+    if not isinstance(value, str):
+        return value
+    return urllib.parse.unquote(value)
+
+
 @_t("template")
 def _template(value, pattern, ctx=None, field=None, **__):
     """Replace {value} with the field value and {field} with other fields."""
@@ -390,6 +420,22 @@ def _template(value, pattern, ctx=None, field=None, **__):
     for k, v in ctx.items():
         result = result.replace(f"{{{k}}}", str(v) if v is not None else "")
     return result
+
+
+@_t("strip_prefix")
+def _strip_prefix(value, prefix, **__):
+    """Remove a prefix from the string if it exists."""
+    if not isinstance(value, str) or not prefix:
+        return value
+    return value.removeprefix(str(prefix))
+
+
+@_t("strip_suffix")
+def _strip_suffix(value, suffix, **__):
+    """Remove a suffix from the string if it exists."""
+    if not isinstance(value, str) or not suffix:
+        return value
+    return value.removesuffix(str(suffix))
 
 
 # Common date formats to try when parsing

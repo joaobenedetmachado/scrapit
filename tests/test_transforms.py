@@ -655,3 +655,40 @@ class TestComplexScenarios:
         # 5. regex -> "1,234.56"
         # 6. float -> 1234.56
         assert apply(val, pipeline) == 1234.56
+
+    def test_url_encode(self):
+        """Encode special characters in URL."""
+        assert apply("hello world!", ["url_encode"]) == "hello%20world%21"
+        assert apply("Café", ["url_encode"]) == "Caf%C3%A9"
+
+    def test_url_decode(self):
+        """Decode percent-encoded characters."""
+        assert apply("hello%20world%21", ["url_decode"]) == "hello world!"
+        assert apply("Caf%C3%A9", ["url_decode"]) == "Café"
+
+    def test_url_transforms_passthrough(self):
+        """Ensure non-string values pass through URL transforms."""
+        assert apply(123, ["url_encode"]) == 123
+        assert apply(None, ["url_decode"]) is None
+
+    def test_strip_prefix(self):
+        """Remove prefix if present."""
+        assert apply("Price: $10", [{"strip_prefix": "Price: "}]) == "$10"
+        assert apply("No prefix", [{"strip_prefix": "Price: "}]) == "No prefix"
+        assert apply(123, [{"strip_prefix": "Price: "}]) == 123
+
+    def test_strip_suffix(self):
+        """Remove suffix if present."""
+        assert apply("10 USD", [{"strip_suffix": " USD"}]) == "10"
+        assert apply("10 EUR", [{"strip_suffix": " USD"}]) == "10 EUR"
+        assert apply(123, [{"strip_suffix": " USD"}]) == 123
+
+    def test_truncate_custom_ellipsis(self):
+        """Truncate with default and custom ellipsis."""
+        text = "Hello world from Scrapit"
+        # Default (backward compatible)
+        assert apply(text, [{"truncate": 11}]) == "Hello world..."
+        # Custom ellipsis
+        assert apply(text, [{"truncate": {"length": 11, "ellipsis": " …"}}]) == "Hello world …"
+        # Empty ellipsis
+        assert apply(text, [{"truncate": {"length": 11, "ellipsis": ""}}]) == "Hello world"

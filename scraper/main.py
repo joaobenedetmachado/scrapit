@@ -285,23 +285,43 @@ def cmd_list(args):
     folder = Path(args.dir) if args.dir else _DIRECTIVES_DIR
     yamls = sorted(folder.glob("*.yaml")) + sorted(folder.glob("*.yml"))
     if not yamls:
-        print(f"no directives found in {folder}")
+        if args.json:
+            print("[]")
+        else:
+            print(f"no directives found in {folder}")
         return
 
-    print(f"\nDirectives in {folder}:\n")
+    results = []
+    if not args.json:
+        print(f"\nDirectives in {folder}:\n")
+
     for y in yamls:
         try:
             with open(y) as f:
                 data = _yaml.safe_load(f)
+            
+            name = y.stem
+            site = data.get("site") or data.get("sites", ["?"])[0]
             backend = data.get("use", "?")
+            fields = list(data.get("scrape", {}).keys())
+
+            if args.json:
+                results.append({
+                    "name": name,
+                    "site": site,
+                    "backend": backend,
+                    "fields": fields
+                })
+                continue
+
             mode = data.get("mode", "single")
             sites_count = len(data.get("sites", [])) or 1
-            fields = list(data.get("scrape", {}).keys())
             pag = "paginated" if data.get("paginate") else ""
             follow = "spider" if data.get("follow") or mode == "spider" else ""
             flags = " ".join(filter(None, [pag, follow]))
+            
             print(f"  ● {y.name}")
-            print(f"    site    : {data.get('site', data.get('sites', ['?'])[0])}")
+            print(f"    site    : {site}")
             print(f"    backend : {backend}  {('(' + flags + ')') if flags else ''}")
             if sites_count > 1:
                 print(f"    sites   : {sites_count} URLs")
@@ -316,7 +336,11 @@ def cmd_list(args):
                 print(f"    cache   : TTL {cache.get('ttl', 0)}s")
             print()
         except Exception as e:
-            print(f"  ● {y.name}  [parse error: {e}]")
+            if not args.json:
+                print(f"  ● {y.name}  [parse error: {e}]")
+
+    if args.json:
+        print(json.dumps(results, indent=2))
 
 
 def cmd_query(args):
@@ -780,6 +804,20 @@ def cmd_doctor(_args):
         except Exception:
             print("  –  playwright browser check skipped")
 
+    # Check Redis connectivity if REDIS_URL is set
+    import os
+    redis_url = os.environ.get("REDIS_URL")
+    if redis_url:
+        try:
+            import redis
+            r = redis.from_url(redis_url, socket_timeout=5)
+            r.ping()
+            print(f"  ✓  Redis ({redis_url:<26}) (reachable)")
+        except ImportError:
+            print(f"  –  Redis ({redis_url:<26}) (redis-py not installed)")
+        except Exception as e:
+            print(f"  ✗  Redis ({redis_url:<26}) ({str(e)})")
+
     print()
     if all_ok:
         print("All required dependencies are installed.")
@@ -1048,9 +1086,9 @@ def main():
     p_batch.add_argument("--limit", type=int, default=None, help="Run only the first N directives alphabetically")
     _add_output_args(p_batch)
 
-    # ── list ──────────────────────────────────────────────────────────────────
     p_list = sub.add_parser("list", help="List available directives")
     p_list.add_argument("--dir", default=None, help="Directory to list")
+    p_list.add_argument("--json", action="store_true", help="Output as JSON array")
 
     # ── query ─────────────────────────────────────────────────────────────────
     p_query = sub.add_parser("query", help="Query saved scrape data")
