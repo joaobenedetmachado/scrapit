@@ -409,6 +409,22 @@ def _template(value, pattern, ctx=None, field=None, **__):
     return result
 
 
+@_t("strip_prefix")
+def _strip_prefix(value, prefix, **__):
+    """Remove a prefix from the string if it exists."""
+    if not isinstance(value, str) or not prefix:
+        return value
+    return value.removeprefix(str(prefix))
+
+
+@_t("strip_suffix")
+def _strip_suffix(value, suffix, **__):
+    """Remove a suffix from the string if it exists."""
+    if not isinstance(value, str) or not suffix:
+        return value
+    return value.removesuffix(str(suffix))
+
+
 # Common date formats to try when parsing
 _COMMON_DATE_FORMATS = [
     "%Y-%m-%d",

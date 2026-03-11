@@ -670,3 +670,15 @@ class TestComplexScenarios:
         """Ensure non-string values pass through URL transforms."""
         assert apply(123, ["url_encode"]) == 123
         assert apply(None, ["url_decode"]) is None
+
+    def test_strip_prefix(self):
+        """Remove prefix if present."""
+        assert apply("Price: $10", [{"strip_prefix": "Price: "}]) == "$10"
+        assert apply("No prefix", [{"strip_prefix": "Price: "}]) == "No prefix"
+        assert apply(123, [{"strip_prefix": "Price: "}]) == 123
+
+    def test_strip_suffix(self):
+        """Remove suffix if present."""
+        assert apply("10 USD", [{"strip_suffix": " USD"}]) == "10"
+        assert apply("10 EUR", [{"strip_suffix": " USD"}]) == "10 EUR"
+        assert apply(123, [{"strip_suffix": " USD"}]) == 123
