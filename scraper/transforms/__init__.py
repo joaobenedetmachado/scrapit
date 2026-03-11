@@ -26,6 +26,7 @@ Supported transforms (use in directive under `transform:`):
   boolean          — cast truthy/falsy strings to bool
   pad: {width, char, side} — pad string to fixed width
   hash: algorithm  — hash value with md5/sha256/sha1
+  number_format: {decimals, sep} — format number with separator
 """
 
 from __future__ import annotations
@@ -539,6 +540,42 @@ def _parse_date(value, args, **__):
     if parsed:
         return parsed.strftime(output_fmt)
     return None
+
+
+@_t("number_format")
+def _number_format(value, arg, **__):
+    """Format number with thousands separator and fixed decimals.
+
+    Arg can be a dict: {decimals: 2, sep: ','}
+    """
+    try:
+        if isinstance(value, str):
+            # Clean numeric-like strings
+            # re.sub to keep only digits, dots, and minus
+            cleaned = re.sub(r"[^\d\.-]", "", value)
+            val = float(cleaned)
+        else:
+            val = float(value)
+    except (TypeError, ValueError):
+        return value
+
+    if isinstance(arg, dict):
+        decimals = int(arg.get("decimals", 2))
+        sep = str(arg.get("sep", ","))
+    else:
+        decimals = 2
+        sep = ","
+
+    # Python f-string logic for thousands separator and decimals
+    # uses ',' as internal thousands and '.' as decimal
+    formatted = f"{val:,.{decimals}f}"
+    
+    # If the user wants a different thousands separator
+    if sep != ",":
+        # swapping safely
+        formatted = formatted.replace(",", "TMP").replace(".", "DEC").replace("TMP", sep).replace("DEC", ".")
+    
+    return formatted
 
 
 def apply(value: Any, transforms: list, ctx: dict | None = None, field: str | None = None) -> Any:

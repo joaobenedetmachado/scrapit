@@ -692,3 +692,16 @@ class TestComplexScenarios:
         assert apply(text, [{"truncate": {"length": 11, "ellipsis": " …"}}]) == "Hello world …"
         # Empty ellipsis
         assert apply(text, [{"truncate": {"length": 11, "ellipsis": ""}}]) == "Hello world"
+
+    def test_number_format(self):
+        """Format numbers with separators and decimals."""
+        # float input, default args
+        assert apply(1234.5, ["number_format"]) == "1,234.50"
+        # int input, custom decimals
+        assert apply(1234, [{"number_format": {"decimals": 0}}]) == "1,234"
+        # large number, custom separator
+        assert apply(1000000, [{"number_format": {"sep": "."}}]) == "1.000.000.00"
+        # string input
+        assert apply("1,234.5", ["number_format"]) == "1,234.50"
+        # passthrough for non-numeric
+        assert apply("abc", ["number_format"]) == "abc"
