@@ -138,12 +138,33 @@ def _float(value, _, **__):
 
 
 @_t("regex")
-def _regex(value, pattern, **__):
-    """Extract the first match of *pattern* from the string; returns None if no match."""
+def _regex(value, arg, **__):
+    """Extract a match from the string using regex.
+
+    Arg can be:
+      - str: the regex pattern (returns whole match, group 0)
+      - dict: {pattern: str, group: int|str} (returns specific group)
+    
+    Returns None if no match or invalid value.
+    """
     if not isinstance(value, str):
         return value
+    
+    if isinstance(arg, dict):
+        pattern = arg.get("pattern", "")
+        group = arg.get("group", 0)
+    else:
+        pattern = arg
+        group = 0
+
     m = re.search(str(pattern), value, re.IGNORECASE | re.DOTALL)
-    return m.group(0) if m else None
+    if not m:
+        return None
+    
+    try:
+        return m.group(group)
+    except (IndexError, KeyError):
+        return None
 
 
 @_t("regex_group")
