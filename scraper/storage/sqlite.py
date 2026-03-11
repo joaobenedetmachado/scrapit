@@ -61,14 +61,21 @@ def save(
     serializable = {k: str(v) for k, v in data.items() if k != "_id"}
 
     if unique_on:
-        # Build a composite key from the specified fields
-        key_parts = [str(data.get(f, "")) for f in unique_on]
-        composite_key = "|".join(key_parts)
-        # Check for existing row with the same key
+        # Build exact match conditions for each field using json_extract
+        # json_extract(data, '$.field') = ?
+        conditions = ["json_extract(data, '$.' || ?) = ?"] * len(unique_on)
+        where_clause = " AND ".join(conditions)
+        
+        # We need pairs: field_name, value for each condition
+        query_params = [directive_name]
+        for f in unique_on:
+            query_params.extend([f, str(data.get(f, ""))])
+
         existing = conn.execute(
-            "SELECT id FROM scrapes WHERE directive = ? AND data LIKE ?",
-            (directive_name, f"%{composite_key}%"),
+            f"SELECT id FROM scrapes WHERE directive = ? AND {where_clause}",
+            query_params,
         ).fetchone()
+
         if existing:
             conn.close()
             return str(db_path)
