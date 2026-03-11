@@ -101,6 +101,41 @@ def _interpolate_env(obj):
     return obj
 
 
+def _deep_merge(base: dict, override: dict) -> dict:
+    """Recursively merge two dictionaries."""
+    res = dict(base)
+    for k, v in override.items():
+        if k in res and isinstance(res[k], dict) and isinstance(v, dict):
+            res[k] = _deep_merge(res[k], v)
+        else:
+            res[k] = v
+    return res
+
+
+def _load_directive(path: str) -> dict:
+    """Load and recursively resolve inheritance for a directive."""
+    path_obj = Path(path)
+    if not path_obj.exists():
+        raise FileNotFoundError(f"Directive file not found: {path}")
+
+    with open(path_obj) as f:
+        dados = yaml.safe_load(f) or {}
+
+    if "extends" in dados:
+        parent_path = dados.pop("extends")
+        # Resolve relative to current directive
+        parent_full_path = (path_obj.parent / parent_path).resolve()
+        if not parent_full_path.exists():
+            # Try from directives root if not found relative
+            from scraper.main import _DIRECTIVES_DIR
+            parent_full_path = (_DIRECTIVES_DIR / parent_path).resolve()
+
+        parent_dados = _load_directive(str(parent_full_path))
+        dados = _deep_merge(parent_dados, dados)
+
+    return dados
+
+
 async def grab_elements_by_directive(path: str, resume: bool = False, timeout: int | None = None, on_result=None) -> dict | list[dict]:
     """
     Main entry point. Returns a single dict for simple scrapes,
@@ -108,9 +143,7 @@ async def grab_elements_by_directive(path: str, resume: bool = False, timeout: i
 
     timeout: per-request timeout in seconds (overrides directive-level setting).
     """
-    with open(path) as f:
-        dados = yaml.safe_load(f)
-
+    dados = _load_directive(path)
     dados = _interpolate_env(dados)
 
     if timeout is not None:
