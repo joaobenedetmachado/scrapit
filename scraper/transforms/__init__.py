@@ -292,22 +292,35 @@ def _normalize_whitespace(value, _, **__):
 
 
 @_t("truncate")
-def _truncate(value, length, **__):
-    """Truncate string to *length* characters, appending '...'.
+def _truncate(value, arg, **__):
+    """Truncate string to length characters, appending ellipsis.
 
+    Arg can be:
+      - int/str: the max length (uses '...' as default ellipsis)
+      - dict: {length: int, ellipsis: str}
+    
     Breaks at the last word boundary so words are not split.
     """
     if not isinstance(value, str):
         return value
-    max_length = int(length)
+    
+    if isinstance(arg, dict):
+        max_length = int(arg.get("length", 0))
+        ellipsis = str(arg.get("ellipsis", "..."))
+    else:
+        max_length = int(arg)
+        ellipsis = "..."
+
     if len(value) <= max_length:
         return value
+    
     truncated = value[:max_length]
     if max_length < len(value) and value[max_length] not in (" ", ""):
         last_space = truncated.rfind(" ")
         if last_space > 0:
             truncated = truncated[:last_space]
-    return truncated.rstrip() + "..."
+    
+    return truncated.rstrip() + ellipsis
 
 
 @_t("slugify")

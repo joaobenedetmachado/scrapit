@@ -682,3 +682,13 @@ class TestComplexScenarios:
         assert apply("10 USD", [{"strip_suffix": " USD"}]) == "10"
         assert apply("10 EUR", [{"strip_suffix": " USD"}]) == "10 EUR"
         assert apply(123, [{"strip_suffix": " USD"}]) == 123
+
+    def test_truncate_custom_ellipsis(self):
+        """Truncate with default and custom ellipsis."""
+        text = "Hello world from Scrapit"
+        # Default (backward compatible)
+        assert apply(text, [{"truncate": 11}]) == "Hello world..."
+        # Custom ellipsis
+        assert apply(text, [{"truncate": {"length": 11, "ellipsis": " …"}}]) == "Hello world …"
+        # Empty ellipsis
+        assert apply(text, [{"truncate": {"length": 11, "ellipsis": ""}}]) == "Hello world"
