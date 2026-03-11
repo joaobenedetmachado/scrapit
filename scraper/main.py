@@ -47,6 +47,11 @@ def _resolve(path_str: str) -> Path:
     for c in candidates:
         if c.exists():
             return c
+    # Show available directives on error
+    available = [f.stem for f in _DIRECTIVES_DIR.glob("*.yaml")]
+    print(f"error: directive not found: {path_str}", file=sys.stderr)
+    if available:
+        print(f"Available directives: {', '.join(sorted(available))}", file=sys.stderr)
     
     # Fallback: if directive not found, list all available YAML directives 
     # in the default directives directory to assist the user.
