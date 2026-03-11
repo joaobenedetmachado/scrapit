@@ -203,6 +203,8 @@ def _run_one(
               spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
         from scraper import hooks
         hooks.fire("on_save", result, dest)
+    else:
+        print("→ dry-run: result not saved")
 
 
 # ── Commands ──────────────────────────────────────────────────────────────────
@@ -983,7 +985,7 @@ def _add_output_args(p):
                    help="JSON output format: pretty (indented, default) or compact (minified)")
     p.add_argument("--sheets-id", help="Google Sheets spreadsheet ID (required for --sheets)")
     p.add_argument("--sheets-credentials", help="Path to Google credentials JSON file (required for --sheets)")
-    p.add_argument("--preview", action="store_true", help="Print only, do not save")
+    p.add_argument("--preview", "--dry-run", action="store_true", help="Print only, do not save")
     p.add_argument("--diff", action="store_true", help="Diff against previous JSON output")
     p.add_argument("--resume", action="store_true", help="Resume interrupted spider/paginated scrape from checkpoint")
     p.add_argument("--reset-state", action="store_true", dest="reset_state", help="Clear incremental spider state for this directive")
