@@ -192,6 +192,9 @@ async def _dispatch(dados: dict, stats: ScrapeStats, directive_name: str, resume
             elif use == "brightdata":
                 from scraper.integrations.brightdata import scrape as bd_scrape
                 results.append(await bd_scrape(site_dados, directive_name))
+            elif use == "rest":
+                from scraper.scrapers.rest_scraper import scrape as rest_scrape
+                results.append(rest_scrape(site_dados))
             else:
                 results.append(await playwright_scraper.scrape(site_dados, directive_name))
             if delay > 0 and idx < len(dados["sites"]) - 1:
@@ -221,6 +224,9 @@ async def _dispatch(dados: dict, stats: ScrapeStats, directive_name: str, resume
     if use == "graphql":
         from scraper.scrapers.graphql_scraper import scrape as gql_scrape
         return [gql_scrape(dados)]
+    elif use == "rest":
+        from scraper.scrapers.rest_scraper import scrape as rest_scrape
+        return [rest_scrape(dados)]
     elif use in ("beautifulsoup", "bs4"):
         return [bs4_scraper.scrape(dados)]
     elif use == "httpx":
