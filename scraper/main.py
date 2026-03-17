@@ -68,7 +68,8 @@ def _resolve(path_str: str) -> Path:
 # ── Storage dispatch ──────────────────────────────────────────────────────────
 
 def _save(result: dict | list, name: str, dest: str, *, output_dir: str | None = None,
-          compact: bool = False, spreadsheet_id: str = None, credentials_path: str = None):
+          compact: bool = False, spreadsheet_id: str = None, credentials_path: str = None,
+          output_config: dict | None = None):
     items = result if isinstance(result, list) else [result]
     for item in items:
         if dest == "mongo":
@@ -85,7 +86,7 @@ def _save(result: dict | list, name: str, dest: str, *, output_dir: str | None =
         elif dest == "postgres":
             postgres_storage.save(item, name)
             print(f"→ saved {len(items)} record(s) to PostgreSQL.")
-        elif dest == "parquet":
+        elif dest in ("parquet", "s3"):
             break  # handled below (whole list at once)
         else:
             # json: save list or single dict
@@ -94,6 +95,10 @@ def _save(result: dict | list, name: str, dest: str, *, output_dir: str | None =
         from scraper.storage import parquet_file
         out = parquet_file.save(items, name, output_dir=output_dir)
         print(f"→ saved {len(items)} record(s) to: {out}")
+    elif dest == "s3":
+        from scraper.storage import s3 as s3_storage
+        out = s3_storage.save(result, name, config=output_config)
+        print(f"→ saved to S3: {out}")
     elif dest == "json":
         out = json_file.save(result, name, output_dir=output_dir, compact=compact)
         print(f"→ saved: {out}")
@@ -133,6 +138,16 @@ def _run_one(
 ):
     import yaml
     name = directive_path.stem
+
+    try:
+        with open(directive_path) as f:
+            dados = yaml.safe_load(f)
+    except Exception:
+        dados = {}
+    
+    output_cfg = dados.get("output", {})
+    if dest == "json" and "backend" in output_cfg:
+        dest = output_cfg["backend"]
 
     _stream_results = []
 
@@ -205,7 +220,8 @@ def _run_one(
 
     if not preview:
         _save(result, name, dest, output_dir=output_dir, compact=compact,
-              spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
+              spreadsheet_id=spreadsheet_id, credentials_path=credentials_path,
+              output_config=output_cfg)
         from scraper import hooks
         hooks.fire("on_save", result, dest)
     else:
@@ -643,7 +659,7 @@ def cmd_validate(args):
 
 def cmd_serve(args):
     from scraper.dashboard import serve
-    serve(host=args.host, port=args.port, open_browser=not args.no_browser)
+    serve(host=args.host, port=args.port, open_browser=not args.no_browser, auth=args.auth)
 
 
 def cmd_export(args):
@@ -1048,6 +1064,8 @@ def _dest(args) -> str:
         return "postgres"
     if getattr(args, "parquet", False):
         return "parquet"
+    if getattr(args, "s3", False):
+        return "s3"
     return "json"
 
 
@@ -1061,6 +1079,7 @@ def _add_output_args(p):
     group.add_argument("--sheets", action="store_true", help="Append to Google Sheets")
     group.add_argument("--postgres", action="store_true", help="Save to PostgreSQL")
     group.add_argument("--parquet", action="store_true", help="Save to output/<name>.parquet")
+    group.add_argument("--s3", action="store_true", help="Save to AWS S3")
     p.add_argument("--output-dir", help="Custom output directory (overrides default 'output/')")
     p.add_argument("--format", choices=["pretty", "compact"], default="pretty",
                    help="JSON output format: pretty (indented, default) or compact (minified)")
@@ -1180,6 +1199,7 @@ def main():
     p_serve.add_argument("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1)")
     p_serve.add_argument("--port", type=int, default=7331, help="Port to listen on (default: 7331)")
     p_serve.add_argument("--no-browser", action="store_true", dest="no_browser", help="Do not open browser automatically")
+    p_serve.add_argument("--auth", help="Enable Basic Auth ('username:password')")
 
     args = parser.parse_args()
 

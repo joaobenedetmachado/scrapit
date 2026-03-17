@@ -37,6 +37,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# pip install scrapit[s3]
+s3 = ["boto3>=1.26"]
+
+# pip install scrapit[metrics]
+metrics = ["prometheus-client>=0.16"]
+
 # pip install scrapit[mongo]
 mongo = ["pymongo>=4.0"]
 
@@ -93,6 +99,8 @@ all = [
   "anthropic>=0.25",
   "openai>=1.0",
   "mcp>=1.0",
+  "boto3>=1.26",
+  "prometheus-client>=0.16",
 ]
 
 # pip install scrapit[dev]

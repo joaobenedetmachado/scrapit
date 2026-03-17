@@ -153,6 +153,12 @@ async def grab_elements_by_directive(path: str, resume: bool = False, timeout: i
         stats.fields_found = found
         stats.fields_missing = missing
 
+    try:
+        from scraper import metrics
+        metrics.track_scrape(stats)
+    except Exception:
+        pass
+
     log(stats.summary())
 
     for r in results:
