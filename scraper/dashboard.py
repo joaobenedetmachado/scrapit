@@ -13,6 +13,7 @@ import csv
 import io
 import json
 import threading
+from typing import Optional
 from pathlib import Path
 from datetime import datetime
 
@@ -34,7 +35,6 @@ except ImportError:
         "Install with: pip install scrapit[ui]"
     )
 
-from typing import Optional
 
 _auth_user: Optional[str] = None
 _auth_pass: Optional[str] = None
