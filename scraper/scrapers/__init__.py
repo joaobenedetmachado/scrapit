@@ -179,11 +179,28 @@ async def _dispatch(dados: dict, stats: ScrapeStats, directive_name: str, resume
 
     # ── Multi-site ────────────────────────────────────────────────────────────
     if has_sites:
+        from urllib.parse import urlparse
         results = []
+        throttle_cfg = dados.get("throttle", {})
+        per_domain = throttle_cfg.get("per_domain", False) if isinstance(throttle_cfg, dict) else False
         delay = dados.get("delay", 0)
+        
+        last_request = {}  # domain -> timestamp
+        
         for idx, url in enumerate(dados["sites"]):
             site_dados = {**dados, "site": url}
             site_dados.pop("sites", None)
+            if "delay" in site_dados:
+                site_dados["delay"] = 0  # Support inner timing overrides if needed
+
+            if delay > 0:
+                domain = urlparse(url).netloc if per_domain else "global"
+                last = last_request.get(domain, 0)
+                elapsed = time.time() - last
+                needed = delay - elapsed
+                if needed > 0:
+                    time.sleep(needed)
+
             if use in ("beautifulsoup", "bs4"):
                 results.append(bs4_scraper.scrape(site_dados))
             elif use == "httpx":
@@ -192,12 +209,18 @@ async def _dispatch(dados: dict, stats: ScrapeStats, directive_name: str, resume
             elif use == "brightdata":
                 from scraper.integrations.brightdata import scrape as bd_scrape
                 results.append(await bd_scrape(site_dados, directive_name))
+            elif use == "rest":
+                from scraper.scrapers.rest_scraper import scrape as rest_scrape
+                results.append(rest_scrape(site_dados))
             else:
                 results.append(await playwright_scraper.scrape(site_dados, directive_name))
-            if delay > 0 and idx < len(dados["sites"]) - 1:
-                time.sleep(delay)
+
+            if delay > 0:
+                last_request[domain] = time.time()
+                
         stats.urls_scraped = len(results)
         return results
+
 
     # ── Spider mode ───────────────────────────────────────────────────────────
     if mode == "spider" or has_follow:
