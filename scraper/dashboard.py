@@ -13,6 +13,7 @@ import csv
 import io
 import json
 import threading
+from typing import Optional
 from pathlib import Path
 from datetime import datetime
 
@@ -24,8 +25,9 @@ _DIRECTIVES_DIR = _Path(__file__).resolve().parent / "directives"
 _jobs: dict[str, dict] = {}
 
 try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI, HTTPException, Depends, status
     from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+    from fastapi.security import HTTPBasic, HTTPBasicCredentials
     import uvicorn
 except ImportError:
     raise ImportError(
@@ -33,7 +35,38 @@ except ImportError:
         "Install with: pip install scrapit[ui]"
     )
 
-app = FastAPI(title="scrapit dashboard", docs_url=None, redoc_url=None)
+
+_auth_user: Optional[str] = None
+_auth_pass: Optional[str] = None
+
+security = HTTPBasic(auto_error=False)
+
+def get_current_user(credentials: Optional[HTTPBasicCredentials] = Depends(security)):
+    if not _auth_user or not _auth_pass:
+        return True # auth disabled
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    import secrets
+    correct_username = secrets.compare_digest(credentials.username, _auth_user)
+    correct_password = secrets.compare_digest(credentials.password, _auth_pass)
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
+app = FastAPI(
+    title="scrapit dashboard", 
+    docs_url=None, 
+    redoc_url=None,
+    dependencies=[Depends(get_current_user)]
+)
 
 # ── Data helpers ──────────────────────────────────────────────────────────────
 
@@ -468,8 +501,24 @@ def index():
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
-def serve(host: str = "127.0.0.1", port: int = 7331, open_browser: bool = True):
+def serve(host: str = "127.0.0.1", port: int = 7331, open_browser: bool = True, auth: str | None = None):
     """Start the scrapit dashboard server."""
+    global _auth_user, _auth_pass
+    import os
+    
+    env_u = os.environ.get("SCRAPIT_DASHBOARD_USER")
+    env_p = os.environ.get("SCRAPIT_DASHBOARD_PASS")
+    if env_u and env_p:
+        _auth_user = env_u
+        _auth_pass = env_p
+        
+    if auth:
+        import sys
+        if ":" in auth:
+            _auth_user, _auth_pass = auth.split(":", 1)
+        else:
+            print("error: auth must be in 'user:pass' format", file=sys.stderr)
+            sys.exit(1)
     url = f"http://{host}:{port}"
     print(f"→ dashboard at {url}")
     if open_browser:
