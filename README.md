@@ -551,6 +551,45 @@ scrapit/
   .env
 ```
 
+## Scheduling
+
+Scrapit includes a built-in scheduler to run your directives on a recurring basis without needing external tools like `cron`.
+
+### YAML Configuration
+
+Add the `schedule:` key to any directive YAML. It supports two formats:
+
+1.  **Cron Expressions**: Standard 5-field cron syntax (requires `pip install croniter`).
+2.  **Simple Intervals**: Human-readable strings like `5m`, `1h`, `12h`, `1d`.
+
+```yaml
+site: https://news.ycombinator.com
+use: beautifulsoup
+
+# Run every 30 minutes
+schedule: "*/30 * * * *"
+
+# Or use an interval:
+# schedule: "1h"
+
+scrape:
+  titles: ['.titleline > a', {attr: text, all: true}]
+```
+
+### Running the Daemon
+
+To start the scheduler for a specific directive, use the `run` command:
+
+```bash
+scrapit run hn --json
+```
+
+This will start a long-running process that waits for the next scheduled time, runs the scraper, saves the output, and repeats.
+
+> [!NOTE]
+> If you use cron expressions, ensure you have the optional dependency installed:
+> `pip install croniter`
+
 ---
 
 ## Hook System

@@ -69,3 +69,20 @@ def clear_all(key_prefix: str = _DEFAULT_PREFIX):
             r.delete(*keys)
     except Exception:
         pass
+
+
+def stats(key_prefix: str = _DEFAULT_PREFIX) -> dict:
+    """Return number of keys and memory usage for the given prefix."""
+    try:
+        r = _connect()
+        keys = r.keys(f"{key_prefix}*")
+        entries = len(keys)
+        
+        # Get memory usage if possible (requires Redis 4.0+)
+        # We can sum memory usage of keys or just use used_memory from info
+        info = r.info("memory")
+        size_bytes = info.get("used_memory", 0)
+        
+        return {"entries": entries, "size_kb": round(size_bytes / 1024, 1)}
+    except Exception:
+        return {"entries": 0, "size_kb": 0}

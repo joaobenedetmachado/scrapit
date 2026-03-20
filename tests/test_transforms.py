@@ -595,3 +595,113 @@ class TestComplexScenarios:
             spec = {"price": ["float"]}
             output = apply_all(result, spec)
             assert output["price"] == expected
+
+    @pytest.mark.parametrize("val, expected", [
+        ("abc", "abc"),
+        ("12.34", 1234),
+        ("  -42  ", -42),
+        (None, None),
+    ])
+    def test_int_edge_cases(self, val, expected):
+        """Test int transform with non-obvious inputs."""
+        assert apply(val, ["int"]) == expected
+
+    @pytest.mark.parametrize("val, expected", [
+        ("1.234,56", 1234.56),
+        ("1,234.56", 1234.56),
+        ("1,29", 1.29),
+        ("invalid", "invalid"),
+        ("$ 1.000,00", 1000.0),
+    ])
+    def test_float_edge_cases(self, val, expected):
+        """Test float transform with European notation and symbols."""
+        assert apply(val, ["float"]) == expected
+
+    @pytest.mark.parametrize("val, args, expected", [
+        ("hello", {"start": -3}, "llo"),
+        ("hello", {"start": -2, "end": -1}, "l"),
+        ([1, 2, 3, 4, 5], {"start": -2}, [4, 5]),
+        ("abc", {"start": 10}, ""),
+    ])
+    def test_slice_negative_indices(self, val, args, expected):
+        """Test slice transform with negative indices and out of bounds."""
+        assert apply(val, [{"slice": args}]) == expected
+
+    def test_template_missing_context(self):
+        """Test template when context keys are missing."""
+        ctx = {"found": "yes"}
+        # Should stay as placeholder or become empty string depending on implementation
+        # Current implementation replaces {found} and leaves {missing} as is
+        result = apply("value", [{"template": "{found} - {missing}"}], ctx=ctx)
+        assert "yes" in result
+        assert "{missing}" in result
+
+    def test_long_transform_chain(self):
+        """Test a pipeline with 5+ transforms in sequence."""
+        val = "  <p>PRICE: $1,234.56 USD</p>  "
+        pipeline = [
+            "strip", 
+            "remove_tags", 
+            "lower", 
+            {"replace": {"usd": ""}}, 
+            {"regex": r"[\d.,]+"}, 
+            "float"
+        ]
+        # Chain detail:
+        # 1. strip -> "<p>PRICE: $1,234.56 USD</p>"
+        # 2. remove_tags -> "PRICE: $1,234.56 USD"
+        # 3. lower -> "price: $1,234.56 usd"
+        # 4. replace -> "price: $1,234.56 "
+        # 5. regex -> "1,234.56"
+        # 6. float -> 1234.56
+        assert apply(val, pipeline) == 1234.56
+
+    def test_url_encode(self):
+        """Encode special characters in URL."""
+        assert apply("hello world!", ["url_encode"]) == "hello%20world%21"
+        assert apply("Café", ["url_encode"]) == "Caf%C3%A9"
+
+    def test_url_decode(self):
+        """Decode percent-encoded characters."""
+        assert apply("hello%20world%21", ["url_decode"]) == "hello world!"
+        assert apply("Caf%C3%A9", ["url_decode"]) == "Café"
+
+    def test_url_transforms_passthrough(self):
+        """Ensure non-string values pass through URL transforms."""
+        assert apply(123, ["url_encode"]) == 123
+        assert apply(None, ["url_decode"]) is None
+
+    def test_strip_prefix(self):
+        """Remove prefix if present."""
+        assert apply("Price: $10", [{"strip_prefix": "Price: "}]) == "$10"
+        assert apply("No prefix", [{"strip_prefix": "Price: "}]) == "No prefix"
+        assert apply(123, [{"strip_prefix": "Price: "}]) == 123
+
+    def test_strip_suffix(self):
+        """Remove suffix if present."""
+        assert apply("10 USD", [{"strip_suffix": " USD"}]) == "10"
+        assert apply("10 EUR", [{"strip_suffix": " USD"}]) == "10 EUR"
+        assert apply(123, [{"strip_suffix": " USD"}]) == 123
+
+    def test_truncate_custom_ellipsis(self):
+        """Truncate with default and custom ellipsis."""
+        text = "Hello world from Scrapit"
+        # Default (backward compatible)
+        assert apply(text, [{"truncate": 11}]) == "Hello world..."
+        # Custom ellipsis
+        assert apply(text, [{"truncate": {"length": 11, "ellipsis": " …"}}]) == "Hello world …"
+        # Empty ellipsis
+        assert apply(text, [{"truncate": {"length": 11, "ellipsis": ""}}]) == "Hello world"
+
+    def test_number_format(self):
+        """Format numbers with separators and decimals."""
+        # float input, default args
+        assert apply(1234.5, ["number_format"]) == "1,234.50"
+        # int input, custom decimals
+        assert apply(1234, [{"number_format": {"decimals": 0}}]) == "1,234"
+        # large number, custom separator
+        assert apply(1000000, [{"number_format": {"sep": "."}}]) == "1.000.000.00"
+        # string input
+        assert apply("1,234.5", ["number_format"]) == "1,234.50"
+        # passthrough for non-numeric
+        assert apply("abc", ["number_format"]) == "abc"

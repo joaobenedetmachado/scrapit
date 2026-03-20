@@ -26,12 +26,14 @@ Supported transforms (use in directive under `transform:`):
   boolean          — cast truthy/falsy strings to bool
   pad: {width, char, side} — pad string to fixed width
   hash: algorithm  — hash value with md5/sha256/sha1
+  number_format: {decimals, sep} — format number with separator
 """
 
 from __future__ import annotations
 
 import hashlib
 import re
+import urllib.parse
 from datetime import datetime
 from typing import Any
 
@@ -138,12 +140,33 @@ def _float(value, _, **__):
 
 
 @_t("regex")
-def _regex(value, pattern, **__):
-    """Extract the first match of *pattern* from the string; returns None if no match."""
+def _regex(value, arg, **__):
+    """Extract a match from the string using regex.
+
+    Arg can be:
+      - str: the regex pattern (returns whole match, group 0)
+      - dict: {pattern: str, group: int|str} (returns specific group)
+    
+    Returns None if no match or invalid value.
+    """
     if not isinstance(value, str):
         return value
+    
+    if isinstance(arg, dict):
+        pattern = arg.get("pattern", "")
+        group = arg.get("group", 0)
+    else:
+        pattern = arg
+        group = 0
+
     m = re.search(str(pattern), value, re.IGNORECASE | re.DOTALL)
-    return m.group(0) if m else None
+    if not m:
+        return None
+    
+    try:
+        return m.group(group)
+    except (IndexError, KeyError):
+        return None
 
 
 @_t("regex_group")
@@ -270,22 +293,35 @@ def _normalize_whitespace(value, _, **__):
 
 
 @_t("truncate")
-def _truncate(value, length, **__):
-    """Truncate string to *length* characters, appending '...'.
+def _truncate(value, arg, **__):
+    """Truncate string to length characters, appending ellipsis.
 
+    Arg can be:
+      - int/str: the max length (uses '...' as default ellipsis)
+      - dict: {length: int, ellipsis: str}
+    
     Breaks at the last word boundary so words are not split.
     """
     if not isinstance(value, str):
         return value
-    max_length = int(length)
+    
+    if isinstance(arg, dict):
+        max_length = int(arg.get("length", 0))
+        ellipsis = str(arg.get("ellipsis", "..."))
+    else:
+        max_length = int(arg)
+        ellipsis = "..."
+
     if len(value) <= max_length:
         return value
+    
     truncated = value[:max_length]
     if max_length < len(value) and value[max_length] not in (" ", ""):
         last_space = truncated.rfind(" ")
         if last_space > 0:
             truncated = truncated[:last_space]
-    return truncated.rstrip() + "..."
+    
+    return truncated.rstrip() + ellipsis
 
 
 @_t("slugify")
@@ -356,6 +392,22 @@ def _hash(value, algorithm, **__):
     return hashlib.new(algo, value.encode()).hexdigest()
 
 
+@_t("url_encode")
+def _url_encode(value, _, **__):
+    """Percent-encode special characters in a URL string."""
+    if not isinstance(value, str):
+        return value
+    return urllib.parse.quote(value)
+
+
+@_t("url_decode")
+def _url_decode(value, _, **__):
+    """Decode percent-encoded characters in a URL string."""
+    if not isinstance(value, str):
+        return value
+    return urllib.parse.unquote(value)
+
+
 @_t("template")
 def _template(value, pattern, ctx=None, field=None, **__):
     """Replace {value} with the field value and {field} with other fields."""
@@ -369,6 +421,22 @@ def _template(value, pattern, ctx=None, field=None, **__):
     for k, v in ctx.items():
         result = result.replace(f"{{{k}}}", str(v) if v is not None else "")
     return result
+
+
+@_t("strip_prefix")
+def _strip_prefix(value, prefix, **__):
+    """Remove a prefix from the string if it exists."""
+    if not isinstance(value, str) or not prefix:
+        return value
+    return value.removeprefix(str(prefix))
+
+
+@_t("strip_suffix")
+def _strip_suffix(value, suffix, **__):
+    """Remove a suffix from the string if it exists."""
+    if not isinstance(value, str) or not suffix:
+        return value
+    return value.removesuffix(str(suffix))
 
 
 # Common date formats to try when parsing
@@ -472,6 +540,42 @@ def _parse_date(value, args, **__):
     if parsed:
         return parsed.strftime(output_fmt)
     return None
+
+
+@_t("number_format")
+def _number_format(value, arg, **__):
+    """Format number with thousands separator and fixed decimals.
+
+    Arg can be a dict: {decimals: 2, sep: ','}
+    """
+    try:
+        if isinstance(value, str):
+            # Clean numeric-like strings
+            # re.sub to keep only digits, dots, and minus
+            cleaned = re.sub(r"[^\d\.-]", "", value)
+            val = float(cleaned)
+        else:
+            val = float(value)
+    except (TypeError, ValueError):
+        return value
+
+    if isinstance(arg, dict):
+        decimals = int(arg.get("decimals", 2))
+        sep = str(arg.get("sep", ","))
+    else:
+        decimals = 2
+        sep = ","
+
+    # Python f-string logic for thousands separator and decimals
+    # uses ',' as internal thousands and '.' as decimal
+    formatted = f"{val:,.{decimals}f}"
+    
+    # If the user wants a different thousands separator
+    if sep != ",":
+        # swapping safely
+        formatted = formatted.replace(",", "TMP").replace(".", "DEC").replace("TMP", sep).replace("DEC", ".")
+    
+    return formatted
 
 
 def apply(value: Any, transforms: list, ctx: dict | None = None, field: str | None = None) -> Any:

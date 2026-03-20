@@ -42,8 +42,20 @@ class Spider:
         self._resume = resume
         self._incremental = self.follow.get("incremental", False)
         self._parallel = int(self.follow.get("parallel", 1))
+        self._exclude_patterns = self.follow.get("exclude", [])
 
         cache_cfg = dados.get("cache", {})
+        throttle_cfg = dados.get("throttle", {})
+        if isinstance(throttle_cfg, (int, float)):
+            self._delay = float(throttle_cfg)
+            self._per_domain = False
+        else:
+            self._delay = float(throttle_cfg.get("delay", dados.get("delay", 0)))
+            self._per_domain = throttle_cfg.get("per_domain", False)
+
+        self._last_request = {}  # domain -> timestamp
+        self._locks = {}        # domain -> asyncio.Lock
+
         self._fetch_kw = dict(
             retries=dados.get("retries", 3),
             timeout=dados.get("timeout", 15),
@@ -51,7 +63,7 @@ class Spider:
             cookies=dados.get("cookies"),
             proxy=dados.get("proxy"),
             cache_ttl=cache_cfg.get("ttl", 0) if isinstance(cache_cfg, dict) else 0,
-            delay=dados.get("delay", 0),
+            delay=0,  # Handled directly by Spider
         )
 
     def _checkpoint_path(self, directive_name: str) -> Path:
@@ -153,9 +165,20 @@ class Spider:
         results = []
         discovered = queue  # already filtered
         total = len(queue)
+        import time
         for i, url in enumerate(queue, 1):
             try:
+                if self._delay > 0:
+                    domain = urlparse(url).netloc if self._per_domain else "global"
+                    last = self._last_request.get(domain, 0)
+                    elapsed = time.time() - last
+                    needed = self._delay - elapsed
+                    if needed > 0:
+                        time.sleep(needed)
+
                 html = fetch_html(url, **self._fetch_kw)
+                if self._delay > 0:
+                    self._last_request[domain] = time.time()
                 soup = BeautifulSoup(html, "html.parser")
                 result = parse_page(soup, url, self.dados["scrape"], raw_html=html)
                 result["_source"] = self.dados["site"]
@@ -189,6 +212,20 @@ class Spider:
         async def fetch_one(idx: int, url: str):
             async with semaphore:
                 try:
+                    import time
+                    if self._delay > 0:
+                        domain = urlparse(url).netloc if self._per_domain else "global"
+                        lock = self._locks.setdefault(domain, asyncio.Lock())
+                        async with lock:
+                            last = self._last_request.get(domain, 0)
+                            elapsed = time.time() - last
+                            if elapsed < 0:
+                                elapsed = 0  # sanity
+                            needed = self._delay - elapsed
+                            if needed > 0:
+                                await asyncio.sleep(needed)
+                            self._last_request[domain] = time.time()
+
                     timeout = self._fetch_kw.get("timeout", 15)
                     headers = self._fetch_kw.get("headers") or {}
                     proxy = self._fetch_kw.get("proxy")
@@ -230,6 +267,17 @@ class Spider:
             if self.same_domain and urlparse(url).netloc != self.base_domain:
                 continue
             if url not in seen:
+                # Check exclusion patterns
+                import re as _re
+                should_exclude = False
+                for pattern in self._exclude_patterns:
+                    if _re.search(str(pattern), url):
+                        should_exclude = True
+                        break
+                
+                if should_exclude:
+                    continue
+
                 seen.add(url)
                 urls.append(url)
 

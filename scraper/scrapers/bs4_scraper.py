@@ -193,7 +193,9 @@ def parse_page(soup: BeautifulSoup, url: str, scrape_spec: dict, raw_html: str =
 
         if element is None:
             on_missing = options.get("on_missing")
-            if on_missing == "skip":
+            if on_missing == "error":
+                raise ValueError(f"Required field '{key}' missing (selector: {selectors})")
+            elif on_missing == "skip":
                 continue
             elif on_missing not in (None, "null"):
                 result[key] = on_missing  # use as default value

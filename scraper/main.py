@@ -27,6 +27,7 @@ from scraper.storage.diff import diff, load_previous
 from scraper.notifications import notify
 from scraper.logger import log
 from scraper.plugins import load_plugins
+from scraper import colors
 
 load_plugins()
 
@@ -47,6 +48,11 @@ def _resolve(path_str: str) -> Path:
     for c in candidates:
         if c.exists():
             return c
+    # Show available directives on error
+    available = [f.stem for f in _DIRECTIVES_DIR.glob("*.yaml")]
+    print(f"error: directive not found: {path_str}", file=sys.stderr)
+    if available:
+        print(f"Available directives: {', '.join(sorted(available))}", file=sys.stderr)
     
     # Fallback: if directive not found, list all available YAML directives 
     # in the default directives directory to assist the user.
@@ -147,6 +153,23 @@ def _run_one(
     # Pretty-print to console
     print(json.dumps(result, indent=2, default=str))
 
+    # Print validation summary if _valid key is present
+    items = result if isinstance(result, list) else [result]
+    if items and "_valid" in items[0]:
+        from scraper.colors import green, red
+        print(f"\n{green('✓') if preview else ''} validation summary:")
+        for i, item in enumerate(items, 1):
+            is_valid = item.get("_valid")
+            identifier = str(item.get("title") or item.get("name") or item.get("url") or f"record {i}")
+            if len(identifier) > 40:
+                identifier = identifier[:37] + "..."
+            
+            if is_valid:
+                print(f"  {green('✓')} valid   {identifier}")
+            else:
+                errs = ", ".join(item.get("_errors", ["unknown error"]))
+                print(f"  {red('✗')} invalid {identifier}: {errs}")
+
     # Change detection
     if detect_changes:
         previous = load_previous(name)
@@ -189,6 +212,8 @@ def _run_one(
               spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
         from scraper import hooks
         hooks.fire("on_save", result, dest)
+    else:
+        print("→ dry-run: result not saved")
 
 
 # ── Commands ──────────────────────────────────────────────────────────────────
@@ -200,6 +225,10 @@ def cmd_scrape(args):
         from scraper.scrapers.spider import Spider
         Spider({}, resume=False).reset_state(path.stem)
         print(f"incremental state cleared for '{path.stem}'")
+        return
+
+    if getattr(args, 'validate_only', False):
+        cmd_validate(args)
         return
 
     dest = _dest(args)
@@ -224,6 +253,9 @@ def cmd_batch(args):
         sys.exit(1)
 
     yamls = sorted(folder.glob("*.yaml")) + sorted(folder.glob("*.yml"))
+    if getattr(args, 'limit', None) is not None:
+        yamls = yamls[:args.limit]
+        
     if not yamls:
         print(f"no YAML directives found in {folder}")
         sys.exit(1)
@@ -260,23 +292,43 @@ def cmd_list(args):
     folder = Path(args.dir) if args.dir else _DIRECTIVES_DIR
     yamls = sorted(folder.glob("*.yaml")) + sorted(folder.glob("*.yml"))
     if not yamls:
-        print(f"no directives found in {folder}")
+        if args.json:
+            print("[]")
+        else:
+            print(f"no directives found in {folder}")
         return
 
-    print(f"\nDirectives in {folder}:\n")
+    results = []
+    if not args.json:
+        print(f"\nDirectives in {folder}:\n")
+
     for y in yamls:
         try:
             with open(y) as f:
                 data = _yaml.safe_load(f)
+            
+            name = y.stem
+            site = data.get("site") or data.get("sites", ["?"])[0]
             backend = data.get("use", "?")
+            fields = list(data.get("scrape", {}).keys())
+
+            if args.json:
+                results.append({
+                    "name": name,
+                    "site": site,
+                    "backend": backend,
+                    "fields": fields
+                })
+                continue
+
             mode = data.get("mode", "single")
             sites_count = len(data.get("sites", [])) or 1
-            fields = list(data.get("scrape", {}).keys())
             pag = "paginated" if data.get("paginate") else ""
             follow = "spider" if data.get("follow") or mode == "spider" else ""
             flags = " ".join(filter(None, [pag, follow]))
+            
             print(f"  ● {y.name}")
-            print(f"    site    : {data.get('site', data.get('sites', ['?'])[0])}")
+            print(f"    site    : {site}")
             print(f"    backend : {backend}  {('(' + flags + ')') if flags else ''}")
             if sites_count > 1:
                 print(f"    sites   : {sites_count} URLs")
@@ -285,11 +337,17 @@ def cmd_list(args):
                 print(f"    transforms: {', '.join(transforms.keys())}")
             if validate := data.get("validate"):
                 print(f"    validate  : {', '.join(validate.keys())}")
+            if schedule := data.get("schedule"):
+                print(f"    schedule  : {schedule}")
             if cache := data.get("cache"):
                 print(f"    cache   : TTL {cache.get('ttl', 0)}s")
             print()
         except Exception as e:
-            print(f"  ● {y.name}  [parse error: {e}]")
+            if not args.json:
+                print(f"  ● {y.name}  [parse error: {e}]")
+
+    if args.json:
+        print(json.dumps(results, indent=2))
 
 
 def cmd_query(args):
@@ -522,6 +580,22 @@ def cmd_diff(args):
             for field, chg in fields.items():
                 print(f"    {field}: {red(repr(chg['old']))} → {green(repr(chg['new']))}")
 
+    if args.output:
+        output_data = {
+            "added": len(added),
+            "removed": len(removed),
+            "changed": len(changed),
+            "records": {
+                "added": {k: new_map[k] for k in added},
+                "removed": {k: old_map[k] for k in removed},
+                "changed": changed
+            }
+        }
+        out_path = Path(args.output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(_json.dumps(output_data, indent=2, default=str), encoding="utf-8")
+        print(f"\nDiff result saved to {out_path}")
+
 
 def cmd_validate(args):
     """Lint a directive YAML for missing required fields, unknown transforms, etc."""
@@ -753,6 +827,20 @@ def cmd_doctor(_args):
         except Exception:
             print("  –  playwright browser check skipped")
 
+    # Check Redis connectivity if REDIS_URL is set
+    import os
+    redis_url = os.environ.get("REDIS_URL")
+    if redis_url:
+        try:
+            import redis
+            r = redis.from_url(redis_url, socket_timeout=5)
+            r.ping()
+            print(f"  ✓  Redis ({redis_url:<26}) (reachable)")
+        except ImportError:
+            print(f"  –  Redis ({redis_url:<26}) (redis-py not installed)")
+        except Exception as e:
+            print(f"  ✗  Redis ({redis_url:<26}) ({str(e)})")
+
     print()
     if all_ok:
         print("All required dependencies are installed.")
@@ -917,10 +1005,26 @@ Add transform: and validate: sections if they make sense for the data."""
 
 def cmd_cache(args):
     from scraper import cache as _cache
+    import os
     if args.action == "stats":
         s = _cache.stats()
-        print(f"cache entries : {s['entries']}")
-        print(f"cache size    : {s['size_kb']} KB")
+        
+        # Check for Redis stats
+        redis_stats = None
+        if os.environ.get("REDIS_URL"):
+            try:
+                from scraper.cache import redis_cache
+                redis_stats = redis_cache.stats()
+            except ImportError:
+                pass
+
+        if redis_stats:
+            print(f"cache entries : {s['entries']} (file) + {redis_stats['entries']} (redis)")
+            print(f"cache size    : {s['size_kb']} KB (file) + {redis_stats['size_kb']} KB (redis)")
+        else:
+            print(f"cache entries : {s['entries']}")
+            print(f"cache size    : {s['size_kb']} KB")
+        
         print(f"cache dir     : {_cache._CACHE_DIR}")
     elif args.action == "clear":
         _cache.clear_all()
@@ -989,11 +1093,13 @@ def main():
         description="Scrapit — YAML-driven modular web scraper framework",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+    parser.add_argument("--no-color", action="store_true", help="Disable ANSI color output")
     sub = parser.add_subparsers(dest="command", required=True)
 
     # ── scrape ────────────────────────────────────────────────────────────────
     p_scrape = sub.add_parser("scrape", help="Scrape a single directive YAML")
     p_scrape.add_argument("directive", help="Name or path of directive (e.g. wikipedia or directives/wikipedia.yaml)")
+    p_scrape.add_argument("--validate-only", action="store_true", help="Validate directive YAML and exit")
     _add_output_args(p_scrape)
 
     # ── batch ─────────────────────────────────────────────────────────────────
@@ -1002,11 +1108,12 @@ def main():
         "folder", nargs="?", default=str(_DIRECTIVES_DIR),
         help="Folder with YAML directives (default: scraper/directives/)"
     )
+    p_batch.add_argument("--limit", type=int, default=None, help="Run only the first N directives alphabetically")
     _add_output_args(p_batch)
 
-    # ── list ──────────────────────────────────────────────────────────────────
     p_list = sub.add_parser("list", help="List available directives")
     p_list.add_argument("--dir", default=None, help="Directory to list")
+    p_list.add_argument("--json", action="store_true", help="Output as JSON array")
 
     # ── query ─────────────────────────────────────────────────────────────────
     p_query = sub.add_parser("query", help="Query saved scrape data")
@@ -1045,6 +1152,7 @@ def main():
     p_diff.add_argument("new", help="New output file (name or path)")
     p_diff.add_argument("--key", default=None, help="Field to use as record key (e.g. url, id)")
     p_diff.add_argument("--summary", action="store_true", help="Show counts only, no detail")
+    p_diff.add_argument("--output", "-o", help="File to save the diff result as JSON")
 
     # ── validate ──────────────────────────────────────────────────────────────
     p_validate = sub.add_parser("validate", help="Lint a directive YAML for errors and warnings")
@@ -1081,6 +1189,9 @@ def main():
     p_serve.add_argument("--no-browser", action="store_true", dest="no_browser", help="Do not open browser automatically")
 
     args = parser.parse_args()
+
+    if args.no_color:
+        colors.disable_color()
 
     dispatch = {
         "init": cmd_init,
