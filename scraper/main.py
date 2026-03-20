@@ -146,6 +146,10 @@ def _run_one(
         on_result=_on_result if stream else None,
     ))
 
+    if preview:
+        from scraper.colors import yellow
+        print(yellow("\n→ dry-run: result not saved"))
+
     # Pretty-print to console
     print(json.dumps(result, indent=2, default=str))
 
@@ -235,7 +239,8 @@ def cmd_scrape(args):
     spreadsheet_id = getattr(args, 'sheets_id', None)
     credentials_path = getattr(args, 'sheets_credentials', None)
     stream = getattr(args, "stream", False)
-    _run_one(path, dest, output_dir=output_dir, compact=compact, preview=args.preview,
+    _run_one(path, dest, output_dir=output_dir, compact=compact,
+             preview=(args.preview or getattr(args, "dry_run", False)),
              detect_changes=args.diff, resume=resume, timeout=timeout,
              spreadsheet_id=spreadsheet_id, credentials_path=credentials_path,
              stream=stream)
@@ -268,7 +273,8 @@ def cmd_batch(args):
         print(f"  {y.name}")
         print(f"{'─' * 50}")
         try:
-            _run_one(y, dest, output_dir=output_dir, compact=compact, preview=args.preview,
+            _run_one(y, dest, output_dir=output_dir, compact=compact,
+                     preview=(args.preview or getattr(args, "dry_run", False)),
                      detect_changes=args.diff, resume=resume,
                      spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
             ok += 1
@@ -1066,7 +1072,8 @@ def _add_output_args(p):
                    help="JSON output format: pretty (indented, default) or compact (minified)")
     p.add_argument("--sheets-id", help="Google Sheets spreadsheet ID (required for --sheets)")
     p.add_argument("--sheets-credentials", help="Path to Google credentials JSON file (required for --sheets)")
-    p.add_argument("--preview", "--dry-run", action="store_true", help="Print only, do not save")
+    p.add_argument("--preview", action="store_true", help="Print only, do not save")
+    p.add_argument("--dry-run", action="store_true", help="Alias for --preview: runs the scrape but does not save results")
     p.add_argument("--diff", action="store_true", help="Diff against previous JSON output")
     p.add_argument("--resume", action="store_true", help="Resume interrupted spider/paginated scrape from checkpoint")
     p.add_argument("--reset-state", action="store_true", dest="reset_state", help="Clear incremental spider state for this directive")
