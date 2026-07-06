@@ -24,9 +24,10 @@ from bs4 import BeautifulSoup
 
 from scraper.scrapers.bs4_scraper import fetch_html, parse_page
 from scraper.logger import log
+from scraper.config import OUTPUT_DIR
 
-_CHECKPOINTS_DIR = Path("output") / ".checkpoints"
-_STATE_DIR        = Path("output") / ".scrapit_state"
+_CHECKPOINTS_DIR = OUTPUT_DIR / ".checkpoints"
+_STATE_DIR        = OUTPUT_DIR / ".scrapit_state"
 
 
 class Spider:
