@@ -209,48 +209,50 @@ class Spider:
         semaphore = asyncio.Semaphore(self._parallel)
         results_map: dict[int, dict] = {}
 
-        async def fetch_one(idx: int, url: str):
-            async with semaphore:
-                try:
-                    import time
-                    if self._delay > 0:
-                        domain = urlparse(url).netloc if self._per_domain else "global"
-                        lock = self._locks.setdefault(domain, asyncio.Lock())
-                        async with lock:
-                            last = self._last_request.get(domain, 0)
-                            elapsed = time.time() - last
-                            if elapsed < 0:
-                                elapsed = 0  # sanity
-                            needed = self._delay - elapsed
-                            if needed > 0:
-                                await asyncio.sleep(needed)
-                            self._last_request[domain] = time.time()
+        timeout = self._fetch_kw.get("timeout", 15)
+        headers = self._fetch_kw.get("headers") or {}
+        proxy = self._fetch_kw.get("proxy")
+        proxies = {"http://": proxy, "https://": proxy} if proxy else None
 
-                    timeout = self._fetch_kw.get("timeout", 15)
-                    headers = self._fetch_kw.get("headers") or {}
-                    proxy = self._fetch_kw.get("proxy")
-                    proxies = {"http://": proxy, "https://": proxy} if proxy else None
-                    async with httpx.AsyncClient(
-                        headers=headers,
-                        proxies=proxies,
-                        timeout=timeout,
-                        follow_redirects=True,
-                    ) as client:
+        async with httpx.AsyncClient(
+            headers=headers,
+            proxies=proxies,
+            timeout=timeout,
+            follow_redirects=True,
+        ) as client:
+
+            async def fetch_one(idx: int, url: str):
+                async with semaphore:
+                    try:
+                        import time
+                        if self._delay > 0:
+                            domain = urlparse(url).netloc if self._per_domain else "global"
+                            lock = self._locks.setdefault(domain, asyncio.Lock())
+                            async with lock:
+                                last = self._last_request.get(domain, 0)
+                                elapsed = time.time() - last
+                                if elapsed < 0:
+                                    elapsed = 0  # sanity
+                                needed = self._delay - elapsed
+                                if needed > 0:
+                                    await asyncio.sleep(needed)
+                                self._last_request[domain] = time.time()
+
                         resp = await client.get(url)
                         resp.raise_for_status()
                         html = resp.text
-                    soup = BeautifulSoup(html, "html.parser")
-                    result = parse_page(soup, url, self.dados["scrape"], raw_html=html)
-                    result["_source"] = self.dados["site"]
-                    results_map[idx] = result
-                    completed.add(url)
-                    visited.add(url)
-                    log(f"spider: scraped {url}")
-                except Exception as e:
-                    log(f"spider: error scraping {url}: {e}", "warning")
+                        soup = BeautifulSoup(html, "html.parser")
+                        result = parse_page(soup, url, self.dados["scrape"], raw_html=html)
+                        result["_source"] = self.dados["site"]
+                        results_map[idx] = result
+                        completed.add(url)
+                        visited.add(url)
+                        log(f"spider: scraped {url}")
+                    except Exception as e:
+                        log(f"spider: error scraping {url}: {e}", "warning")
 
-        tasks = [fetch_one(i, url) for i, url in enumerate(queue)]
-        await asyncio.gather(*tasks)
+            tasks = [fetch_one(i, url) for i, url in enumerate(queue)]
+            await asyncio.gather(*tasks)
 
         # Preserve order
         return [results_map[i] for i in sorted(results_map)]
