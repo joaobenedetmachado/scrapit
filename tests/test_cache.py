@@ -53,7 +53,7 @@ class TestRedisBackend:
         mock_redis = MagicMock()
         mock_redis.get.return_value = "<html>cached</html>"
         with patch.dict("sys.modules", {"scraper.cache.redis_cache": mock_redis}):
-            result = cache.get(
+            cache.get(
                 "https://example.com",
                 ttl=3600,
                 cache_cfg={"backend": "redis"}
