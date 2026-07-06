@@ -54,6 +54,15 @@ _HEADERS = {
 _STRIP_TAGS = ["script", "style", "nav", "footer", "aside", "header"]
 
 
+def _clean_soup(soup: BeautifulSoup, strip_tags: list[str] | None = None) -> str:
+    """Remove unwanted elements from soup and return clean text."""
+    for tag in strip_tags or _STRIP_TAGS:
+        for el in soup.find_all(tag):
+            el.decompose()
+    text = soup.get_text(separator="\n", strip=True)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
 # ── scrape_url ────────────────────────────────────────────────────────────────
 
 def scrape_url(
@@ -73,13 +82,7 @@ def scrape_url(
     resp.raise_for_status()
 
     soup = BeautifulSoup(resp.text, "html.parser")
-    for tag in strip_tags:
-        for el in soup.find_all(tag):
-            el.decompose()
-
-    text = soup.get_text(separator="\n", strip=True)
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    return text.strip()
+    return _clean_soup(soup, strip_tags)
 
 
 # ── scrape_page ───────────────────────────────────────────────────────────────
@@ -112,11 +115,7 @@ def scrape_page(url: str, *, timeout: int = 15) -> dict[str, Any]:
         if href.startswith("http"):
             links.append(href)
 
-    for tag in _STRIP_TAGS:
-        for el in soup.find_all(tag):
-            el.decompose()
-
-    main_content = re.sub(r"\n{3,}", "\n\n", soup.get_text(separator="\n", strip=True)).strip()
+    main_content = _clean_soup(soup)
 
     return {
         "url": url,
