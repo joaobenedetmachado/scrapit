@@ -1,11 +1,18 @@
+# Core dependencies (always required)
 requests
 bs4
 pyyaml
-pika
-pymongo
 python-dotenv
-playwright
-openpyxl
-google-api-python-client
-google-auth
-psycopg2-binary 
+
+# Optional: install extras as needed:
+#   pip install scrapit-scraper[playwright]   # headless browser backend
+#   pip install scrapit-scraper[mongo]        # MongoDB storage
+#   pip install scrapit-scraper[excel]        # Excel XLSX storage
+#   pip install scrapit-scraper[sheets]       # Google Sheets storage
+#   pip install scrapit-scraper[postgres]     # PostgreSQL storage
+#   pip install scrapit-scraper[queue]        # RabbitMQ queue
+#   pip install scrapit-scraper[parquet]      # Parquet file storage
+#   pip install scrapit-scraper[ui]           # Web dashboard
+#   pip install scrapit-scraper[anthropic]    # Anthropic SDK
+#   pip install scrapit-scraper[openai]       # OpenAI SDK
+#   pip install scrapit-scraper[mcp]          # MCP server
