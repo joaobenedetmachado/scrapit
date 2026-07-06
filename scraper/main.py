@@ -79,9 +79,6 @@ def _save(result: dict | list, name: str, dest: str, *, output_dir: str | None =
             sqlite_storage.save(item, name, output_dir=output_dir)
         elif dest == "excel":
             excel_storage.save(item, name, output_dir=output_dir)
-        elif dest == "sheets":
-            url = gs_storage.save_batch(items, name, spreadsheet_id=spreadsheet_id, credentials_path=credentials_path)
-            print(f"→ appended {len(items)} row(s) to Google Sheets: {url}")
         elif dest == "postgres":
             postgres_storage.save(item, name)
             print(f"→ saved {len(items)} record(s) to PostgreSQL.")
